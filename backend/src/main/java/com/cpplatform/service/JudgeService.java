@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class JudgeService {
 
     private final JudgePersistence persistence;
+    private final LeaderboardService leaderboardService;
 
     @Value("${judge.workspace-dir}")
     private String workspaceDir;
@@ -139,7 +140,11 @@ public class JudgeService {
             int score = job.testCases().isEmpty() ? 0
                     : (int) Math.round(100.0 * passed / job.testCases().size());
 
-            persistence.saveResults(submissionId, finalVerdict, score, maxRuntimeMs, outcomes); // short tx
+            // short tx; returns the user id only on their first solve of this problem
+            Long newlySolvedUserId = persistence.saveResults(submissionId, finalVerdict, score, maxRuntimeMs, outcomes);
+            if (newlySolvedUserId != null) {
+                leaderboardService.onFirstSolve(newlySolvedUserId); // Redis update, outside any tx
+            }
 
         } catch (Exception e) {
             log.error("Judging failed for submission {}", submissionId, e);

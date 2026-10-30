@@ -14,6 +14,10 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      # Keep Redis blocking short so that, if Redis is down, leaderboard reads fail
+      # fast and fall back to Postgres instead of stalling the request.
+      timeout: 800ms
+      connect-timeout: 800ms
 
 server:
   port: 8080

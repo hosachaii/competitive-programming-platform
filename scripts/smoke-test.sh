@@ -189,6 +189,12 @@ if rtok:
     check("rate-limit (2nd submit -> 429)", st1 == 200 and st2 == 429, f"first={st1}, second={st2} ({msg})")
     cleanup_orphans()
 
+# 7) Leaderboard reflects the accepted solutions submitted above (Redis-backed).
+st, lb = http("GET", "/api/leaderboard?limit=50")
+ok = st == 200 and isinstance(lb, list) and any(e.get("solvedCount", 0) >= 1 for e in lb)
+top = lb[0] if (isinstance(lb, list) and lb) else None
+check("leaderboard (has solvers)", ok, f"HTTP {st}, entries={len(lb) if isinstance(lb,list) else '?'}, top={top}")
+
 npass = sum(1 for _,ok,_ in results if ok)
 ntot = len(results)
 print(f"\n== {npass}/{ntot} checks passed ==")

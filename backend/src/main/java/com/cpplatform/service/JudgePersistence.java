@@ -79,9 +79,13 @@ public class JudgePersistence {
      * Short transaction: persist every per-test-case result, the overall verdict,
      * score and runtime, and update the user's progress. Called once, after all
      * Docker execution is done.
+     *
+     * @return the user id if this submission was the user's FIRST solve of the
+     *         problem (so the caller can bump the leaderboard outside this
+     *         transaction), otherwise {@code null}.
      */
     @Transactional
-    public void saveResults(Long submissionId, SubmissionStatus finalVerdict, int score,
+    public Long saveResults(Long submissionId, SubmissionStatus finalVerdict, int score,
                             int maxRuntimeMs, List<TcOutcome> outcomes) {
         Submission submission = submissionRepository.findById(submissionId).orElseThrow();
 
@@ -102,7 +106,8 @@ public class JudgePersistence {
         submission.setJudgedAt(Instant.now());
         submissionRepository.save(submission);
 
-        updateProgress(submission, finalVerdict == SubmissionStatus.ACCEPTED);
+        boolean newlySolved = updateProgress(submission, finalVerdict == SubmissionStatus.ACCEPTED);
+        return newlySolved ? submission.getUser().getId() : null;
     }
 
     /**
@@ -119,7 +124,8 @@ public class JudgePersistence {
         });
     }
 
-    private void updateProgress(Submission submission, boolean solved) {
+    /** @return true if this call flipped the problem to solved for the first time. */
+    private boolean updateProgress(Submission submission, boolean solved) {
         Long userId = submission.getUser().getId();
         Long problemId = submission.getProblem().getId();
         var progress = userProgressRepository.findByUserIdAndProblemId(userId, problemId)
@@ -128,10 +134,13 @@ public class JudgePersistence {
                         .problem(submission.getProblem())
                         .build());
         progress.setAttempts(progress.getAttempts() + 1);
+        boolean newlySolved = false;
         if (solved && !progress.isSolved()) {
             progress.setSolved(true);
             progress.setBestSubmissionId(submission.getId());
+            newlySolved = true;
         }
         userProgressRepository.save(progress);
+        return newlySolved;
     }
 }
