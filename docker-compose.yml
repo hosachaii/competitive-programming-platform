@@ -7,8 +7,10 @@ services:
       POSTGRES_DB: cpplatform
       POSTGRES_USER: cpplatform
       POSTGRES_PASSWORD: cpplatform
+    # Published on 5433 so it doesn't clash with a Postgres already running on the
+    # host's 5432. The backend talks to it over the compose network on 5432 either way.
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -35,8 +37,8 @@ services:
       DB_PASSWORD: cpplatform
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: local-dev-secret-change-in-production-please-min-32-chars
-      JUDGE_WORKSPACE: /tmp/judge-workspace
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-in-production-please-min-32-chars}
+      JUDGE_WORKSPACE: ${JUDGE_WORKSPACE_HOST:-/tmp/judge-workspace}
     volumes:
       # backend needs the host's Docker socket to launch judge sandbox containers
       - /var/run/docker.sock:/var/run/docker.sock
@@ -48,7 +50,11 @@ services:
       # a directory that doesn't exist there and silently mount an empty one.
       # Using the same path on both sides means "the directory backend writes
       # into" and "the directory the host daemon reads from" are the same place.
-      - /tmp/judge-workspace:/tmp/judge-workspace
+      #
+      # The path is overridable via JUDGE_WORKSPACE_HOST (see .env). On a
+      # snap-packaged Docker daemon, bind-mount sources must live under the
+      # user's home directory, so set it to e.g. /home/<you>/cp-judge-workspace.
+      - ${JUDGE_WORKSPACE_HOST:-/tmp/judge-workspace}:${JUDGE_WORKSPACE_HOST:-/tmp/judge-workspace}
     depends_on:
       postgres:
         condition: service_healthy
