@@ -1,0 +1,65 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cpplatform
+      POSTGRES_USER: cpplatform
+      POSTGRES_PASSWORD: cpplatform
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cpplatform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: cpplatform
+      DB_USER: cpplatform
+      DB_PASSWORD: cpplatform
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: local-dev-secret-change-in-production-please-min-32-chars
+      JUDGE_WORKSPACE: /tmp/judge-workspace
+    volumes:
+      # backend needs the host's Docker socket to launch judge sandbox containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # IMPORTANT: source and target must be the IDENTICAL absolute path.
+      # JudgeService (running inside this container) tells the HOST docker daemon
+      # to mount subpaths of this directory into sandbox containers. The host
+      # daemon only understands paths as they exist on the host/VM — so if this
+      # were a named volume or a different path, the host daemon would look for
+      # a directory that doesn't exist there and silently mount an empty one.
+      # Using the same path on both sides means "the directory backend writes
+      # into" and "the directory the host daemon reads from" are the same place.
+      - /tmp/judge-workspace:/tmp/judge-workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

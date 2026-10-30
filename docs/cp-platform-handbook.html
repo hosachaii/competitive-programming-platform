@@ -1,0 +1,1866 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CP Platform Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: technical handbook. Sticky chapter index on the left (desktop), one reading column, verdict colours as the only loud element. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --ink: #18202c;
+  --muted: #586274;
+  --line: #dce1e8;
+  --accent: #0b6b6f;
+  --accent-soft: #e2f1f1;
+  --code-bg: #edf0f4;
+  --diagram-bg: #fbfcfd;
+  --ok: #1d6f3a; --ok-bg: #e1f3e6;
+  --bad: #a8261b; --bad-bg: #fbe6e3;
+  --warn: #8a5d00; --warn-bg: #fbf0d2;
+  --neutral: #4a5465; --neutral-bg: #e9ecf1;
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10141a; --surface: #161b23; --ink: #e3e7ed; --muted: #9aa3b2; --line: #2a313c;
+    --accent: #5fc4c6; --accent-soft: #15353a; --code-bg: #1c222c; --diagram-bg: #fbfcfd;
+    --ok: #7fd69d; --ok-bg: #163223; --bad: #f2958b; --bad-bg: #3a1a17;
+    --warn: #e6bf62; --warn-bg: #372d12; --neutral: #c3cad5; --neutral-bg: #262d38;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10141a; --surface: #161b23; --ink: #e3e7ed; --muted: #9aa3b2; --line: #2a313c;
+  --accent: #5fc4c6; --accent-soft: #15353a; --code-bg: #1c222c; --diagram-bg: #fbfcfd;
+  --ok: #7fd69d; --ok-bg: #163223; --bad: #f2958b; --bad-bg: #3a1a17;
+  --warn: #e6bf62; --warn-bg: #372d12; --neutral: #c3cad5; --neutral-bg: #262d38;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.62;
+  padding-inline: 16px; padding-block: 0;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+.layout { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 0; }
+@media (min-width: 1020px) {
+  .layout { grid-template-columns: 260px minmax(0, 1fr); gap: 48px; }
+  .toc { position: sticky; top: env(safe-area-inset-top, 0px); max-height: 100vh; overflow-y: auto; padding-block: 32px; }
+}
+main { min-width: 0; max-width: 780px; padding-block: 32px 96px; }
+
+/* chapter index */
+.toc { font-family: var(--f-display); font-size: 13.5px; line-height: 1.4; }
+.toc details { border-bottom: 1px solid var(--line); padding-block: 16px; }
+@media (min-width: 1020px) { .toc details { border: 0; padding: 0; } .toc summary { pointer-events: none; } .toc summary::marker { content: ""; } }
+.toc summary { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; color: var(--muted); cursor: pointer; }
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc .part { margin-top: 14px; font-weight: 700; color: var(--ink); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.toc li a { display: block; padding: 3px 0 3px 10px; color: var(--muted); text-decoration: none; border-left: 2px solid var(--line); }
+.toc li a:hover { color: var(--accent); border-left-color: var(--accent); }
+
+/* masthead */
+.masthead { padding-block: 24px 8px; border-bottom: 2px solid var(--ink); margin-bottom: 32px; }
+.eyebrow { font-family: var(--f-display); font-weight: 600; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(36px, 6vw, 56px); line-height: 1.02; letter-spacing: -0.02em; margin: 8px 0 12px; text-wrap: balance; }
+.lede { font-size: 20px; line-height: 1.5; color: var(--muted); margin: 0 0 20px; max-width: 62ch; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 24px 0 8px; }
+.facts div { background: var(--surface); padding: 12px 14px; }
+.facts b { display: block; font-family: var(--f-display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.facts span { font-family: var(--f-display); font-size: 12px; color: var(--muted); letter-spacing: .03em; }
+
+/* parts & chapters */
+.part-head { margin: 72px 0 8px; padding-top: 20px; border-top: 2px solid var(--ink); }
+.part-head .eyebrow { color: var(--muted); }
+.part-head h2 { font-family: var(--f-display); font-weight: 800; font-size: clamp(28px, 4.5vw, 38px); line-height: 1.1; margin: 4px 0 8px; text-wrap: balance; }
+.part-head p { color: var(--muted); margin: 0; max-width: 62ch; }
+section.ch { margin-top: 56px; }
+h3 { font-family: var(--f-display); font-weight: 700; font-size: 26px; line-height: 1.2; margin: 0 0 6px; text-wrap: balance; }
+h3 .num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 8px; }
+h4 { font-family: var(--f-display); font-weight: 700; font-size: 19px; margin: 32px 0 6px; text-wrap: balance; }
+h5 { font-family: var(--f-display); font-weight: 600; font-size: 15px; letter-spacing: .02em; margin: 22px 0 4px; }
+p, li { max-width: 68ch; }
+ul, ol { padding-left: 1.3em; }
+li + li { margin-top: 4px; }
+
+.level { display: inline-block; font-family: var(--f-display); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; margin-bottom: 10px; }
+.level.everyone { background: var(--ok-bg); color: var(--ok); }
+.level.developer { background: var(--accent-soft); color: var(--accent); }
+.level.advanced { background: var(--warn-bg); color: var(--warn); }
+
+code { font-family: var(--f-mono); font-size: .84em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+pre.code { font-family: var(--f-mono); font-size: 13.5px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); padding: 14px 16px; overflow-x: auto; border-radius: 4px; margin: 16px 0; }
+pre.code code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.cm { color: var(--muted); }
+
+.table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.45; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--f-display); font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+td.wrap code { white-space: normal; }
+
+.diagram { background: var(--diagram-bg); border: 1px solid var(--line); border-radius: 4px; padding: 16px; margin: 20px 0; overflow-x: auto; }
+.diagram pre.mermaid { margin: 0; background: none; font-family: var(--f-display); text-align: center; color: #18202c; }
+.caption { font-family: var(--f-display); font-size: 13px; color: var(--muted); margin: -12px 0 20px; }
+
+.note { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; margin: 20px 0; border-radius: 0 4px 4px 0; }
+.note.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+.note.bad { border-left-color: var(--bad); background: var(--bad-bg); }
+.note p { margin: 0; }
+.note p + p { margin-top: 8px; }
+.note b.tag { font-family: var(--f-display); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; margin-right: 6px; }
+
+.v { display: inline-block; font-family: var(--f-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 10px; white-space: nowrap; vertical-align: 1px; }
+.v.ok { background: var(--ok-bg); color: var(--ok); }
+.v.bad { background: var(--bad-bg); color: var(--bad); }
+.v.warn { background: var(--warn-bg); color: var(--warn); }
+.v.na { background: var(--neutral-bg); color: var(--neutral); }
+
+.steps { counter-reset: s; list-style: none; padding: 0; margin: 16px 0; }
+.steps > li { counter-increment: s; position: relative; padding-left: 40px; margin-top: 12px; }
+.steps > li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--bg); font-family: var(--f-display); font-weight: 700; font-size: 13px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+
+.cases { display: grid; gap: 14px; margin: 18px 0; }
+.case { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+.case header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-bottom: 6px; }
+.case .id { font-family: var(--f-mono); font-weight: 600; font-size: 13px; color: var(--accent); }
+.case h5 { margin: 0; font-size: 17px; flex: 1 1 260px; }
+.case dl { margin: 0; display: grid; grid-template-columns: 1fr; gap: 6px; }
+.case dt { font-family: var(--f-display); font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.case dd { margin: 0; }
+.case dd p { margin: 0; }
+.case dd p + p { margin-top: 6px; }
+
+.tree { font-family: var(--f-mono); font-size: 13px; line-height: 1.6; }
+.tree .d { color: var(--accent); font-weight: 600; }
+.tree .c { color: var(--muted); }
+
+footer { margin-top: 80px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-display); font-size: 13px; color: var(--muted); }
+@media print {
+  .toc { display: none; }
+  .layout { display: block; }
+  main { max-width: none; padding: 0; }
+  body { background: #fff; color: #000; font-size: 10.5pt; padding: 0; }
+  .part-head { break-before: page; }
+  .case, .diagram, pre.code, .note, .facts { break-inside: avoid; }
+  h3, h4, h5 { break-after: avoid; }
+  .table-wrap, .diagram, pre.code { overflow: visible; }
+  a { color: inherit; text-decoration: none; }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded', function () { if (window.mermaid) { mermaid.initialize({ startOnLoad: false, theme: 'neutral' }); mermaid.run({ querySelector: 'pre.mermaid' }); } });</script>
+</head>
+<body>
+
+<div class="layout">
+<nav class="toc" aria-label="Chapters">
+  <details open>
+    <summary>Contents</summary>
+    <ol>
+      <li><a href="#how-to-read">How to read this</a></li>
+      <li class="part">I · The idea</li>
+      <li><a href="#what">1 What this project is</a></li>
+      <li><a href="#tour">2 A tour from the user's chair</a></li>
+      <li><a href="#glossary">3 Words you'll meet</a></li>
+      <li class="part">II · The structure</li>
+      <li><a href="#parts">4 The moving parts</a></li>
+      <li><a href="#stack">5 Technology stack</a></li>
+      <li><a href="#repo">6 The repository, file by file</a></li>
+      <li><a href="#layers">7 Inside the backend</a></li>
+      <li><a href="#data">8 The data model</a></li>
+      <li><a href="#api">9 The API</a></li>
+      <li><a href="#frontend">10 Inside the frontend</a></li>
+      <li class="part">III · The flows</li>
+      <li><a href="#startup">11 Starting the system</a></li>
+      <li><a href="#request">12 Life of an HTTP request</a></li>
+      <li><a href="#auth">13 Accounts and tokens</a></li>
+      <li><a href="#problems">14 Managing problems</a></li>
+      <li><a href="#judging">15 Submitting and judging</a></li>
+      <li><a href="#leaderboard">16 The leaderboard</a></li>
+      <li class="part">IV · Specific cases</li>
+      <li><a href="#cases-judge">17 Judging cases</a></li>
+      <li><a href="#cases-auth">18 Account and access cases</a></li>
+      <li><a href="#cases-problem">19 Problem management cases</a></li>
+      <li><a href="#cases-infra">20 Infrastructure cases</a></li>
+      <li class="part">V · Deep dives</li>
+      <li><a href="#security">21 Security model</a></li>
+      <li><a href="#sandbox">22 The sandbox, flag by flag</a></li>
+      <li><a href="#concurrency">23 Threads and transactions</a></li>
+      <li><a href="#spring">24 Spring subtleties</a></li>
+      <li class="part">VI · Operating it</li>
+      <li><a href="#running">25 Running it</a></li>
+      <li><a href="#config">26 Configuration reference</a></li>
+      <li><a href="#troubleshooting">27 Troubleshooting</a></li>
+      <li><a href="#deploying">28 Deploying</a></li>
+      <li class="part">VII · What's next</li>
+      <li><a href="#issues">29 Known issues</a></li>
+      <li><a href="#roadmap">30 Roadmap</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+<header class="masthead">
+  <div class="eyebrow">Project handbook · cp-platform v0.1.0</div>
+  <h1>CP Platform Handbook</h1>
+  <p class="lede">A complete explanation of the competitive programming judge: what it does, how it is built, how every operation flows through it, and how it behaves in specific situations, written to take a reader from no background to a working understanding of every file.</p>
+  <div class="facts">
+    <div><b>≈3,000</b><span>lines of source</span></div>
+    <div><b>65</b><span>project files</span></div>
+    <div><b>14</b><span>HTTP endpoints</span></div>
+    <div><b>8</b><span>database tables</span></div>
+    <div><b>3</b><span>judged languages</span></div>
+    <div><b>5</b><span>containers in compose</span></div>
+  </div>
+</header>
+
+<section id="how-to-read">
+  <h3>How to read this</h3>
+  <p>Every chapter carries a level tag so you can choose your path:</p>
+  <ul>
+    <li><span class="level everyone">Everyone</span> assumes no programming knowledge. Parts I and IV are mostly written at this level.</li>
+    <li><span class="level developer">Developer</span> assumes you can read code and know roughly what a web server and a database are.</li>
+    <li><span class="level advanced">Advanced</span> assumes familiarity with Spring, Docker and HTTP, and goes into the reasoning behind design choices and their failure modes.</li>
+  </ul>
+  <p>If you only have twenty minutes, read chapters 1, 2, 4 and 15. If you are preparing to explain the project in an interview, add chapters 13, 21, 22 and 29. Part IV (specific cases) is designed to be dipped into: each case stands on its own.</p>
+  <p>Everything here was written by reading the full source. Statements about behaviour were checked against the code, and a few were checked by running it: the backend compiles, the frontend builds, and the output-comparison and JSON behaviours described in chapter 15 were tested directly. Where something was not verified by running, the text says so.</p>
+</section>
+
+<!-- ============ PART I ============ -->
+<div class="part-head">
+  <div class="eyebrow">Part I</div>
+  <h2>The idea</h2>
+  <p>What the platform is, what it feels like to use, and the vocabulary the rest of the handbook relies on.</p>
+</div>
+
+<section class="ch" id="what">
+  <span class="level everyone">Everyone</span>
+  <h3><span class="num">1</span>What this project is</h3>
+  <p>CP Platform is a website where people practise programming by solving puzzles, and where a computer checks their answers automatically. "CP" stands for <em>competitive programming</em>, the sport behind sites such as Codeforces, LeetCode and HackerRank.</p>
+  <p>A puzzle (called a <strong>problem</strong>) looks like this: "You are given two numbers. Print their sum." The person solving it does not type the answer. They write a small <strong>program</strong> that can compute the answer for <em>any</em> pair of numbers, and submit that program to the website.</p>
+  <p>The website then acts as an examiner. It holds a set of secret test questions for the problem, for example "3 and 4 → 7", "−10 and 10 → 0", "1,000,000 and 1 → 1,000,001". It runs the submitted program on each question, compares what the program printed with the correct answer, and gives a verdict: <span class="v ok">ACCEPTED</span> if every answer was right, or a specific failure such as <span class="v bad">WRONG_ANSWER</span> or <span class="v bad">TIME_LIMIT_EXCEEDED</span>.</p>
+
+  <h4>The difficult part: running strangers' code safely</h4>
+  <p>Running a program written by an unknown person on your own server is dangerous. The program could delete files, read secrets, attack other computers over the network, or simply loop forever and use up the machine. An online judge must run that code anyway, thousands of times a day.</p>
+  <p>This project solves that the same way a laboratory handles a dangerous sample: inside a sealed box. Each run happens inside a <strong>Docker container</strong>, a lightweight isolated environment with no network connection, a fixed amount of memory, a cap on how many processes it may start, a file system it cannot modify (apart from one scratch folder), and a stopwatch. When the run ends, the box is thrown away. Chapter 22 examines each of those walls in detail.</p>
+
+  <h4>What it is made of, in one paragraph</h4>
+  <p>The part you see in the browser (the <strong>frontend</strong>) is a React web application. It talks to a <strong>backend</strong> server written in Java with the Spring Boot framework. The backend stores users, problems and results in a <strong>PostgreSQL</strong> database, and when a program needs judging it asks <strong>Docker</strong> to start a sealed container for it. Everything can be started with a single command using Docker Compose.</p>
+
+  <h4>What it is not (yet)</h4>
+  <ul>
+    <li>It is not a contest system: there are no timed rounds, no penalties, no per-contest rankings.</li>
+    <li>It is a single server. One backend process does everything, including judging. Chapter 30 describes how it would be split up to handle more users.</li>
+    <li>It has no automated test suite. There is no <code>src/test</code> folder in the backend.</li>
+  </ul>
+</section>
+
+<section class="ch" id="tour">
+  <span class="level everyone">Everyone</span>
+  <h3><span class="num">2</span>A tour from the user's chair</h3>
+  <p>This chapter walks through the site the way a visitor experiences it. Later chapters explain what happens behind each click.</p>
+
+  <h4>A visitor who is not logged in</h4>
+  <p>The home page lists problems in a table: title, a coloured difficulty badge (Easy, Medium, Hard) and tags such as "arrays" or "math". A dropdown filters by difficulty. The <strong>Leaderboard</strong> link shows users ranked by how many different problems they have solved. Clicking a problem opens its page: the statement, any constraints, and a few <em>sample tests</em> (example inputs with their correct outputs) so the solver can see the expected format. Below that sits a code editor, the same editor that powers Visual Studio Code, with a language selector for C++, Python and Java.</p>
+  <p>A visitor can read everything and even type code, but pressing <strong>Submit</strong> sends them to the login page.</p>
+
+  <h4>Registering and logging in</h4>
+  <p>The Register page asks for an email, a username (3 to 30 characters) and a password (at least 8 characters). After registering, the visitor is logged in immediately and their username appears in the top bar with a Logout button. Logging in later uses email and password.</p>
+
+  <h4>Solving a problem</h4>
+  <ol class="steps">
+    <li>The user picks a language. The editor fills with a starter template, for example a C++ <code>main</code> function.</li>
+    <li>They write a solution that reads the input from standard input (the keyboard, as far as the program knows) and prints the answer.</li>
+    <li>They press Submit. The page immediately moves to a <strong>submission page</strong> with a grey <span class="v na">PENDING</span> badge.</li>
+    <li>Every 1.5 seconds the page asks the server for news. After a few seconds the badge turns into the verdict. A score shows what percentage of the tests passed, the runtime of the slowest test is shown, and a table lists each test as "Sample n" or "Hidden n" with its own verdict.</li>
+    <li>If the code failed to compile, the compiler's error message is shown so the user can fix it.</li>
+  </ol>
+  <p>Solving a problem for the first time adds one to the user's solved count, which moves them up the leaderboard.</p>
+
+  <h4>The administrator's view</h4>
+  <p>Users with the <strong>ADMIN</strong> role see extra controls. A "+ New Problem" link in the top bar opens a form for title, difficulty, statement, constraints, time limit, memory limit, tags and any number of test cases, each with input, expected output and a "Public (sample)" checkbox. On a problem's page, admins also see <strong>Edit</strong> and <strong>Delete</strong> buttons.</p>
+  <p>There is no screen for making someone an admin. The first administrator is created by changing their role directly in the database (chapter 25 shows the command).</p>
+</section>
+
+<section class="ch" id="glossary">
+  <span class="level everyone">Everyone</span>
+  <h3><span class="num">3</span>Words you'll meet</h3>
+  <h4>Verdicts</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Verdict</th><th>Meaning</th><th>Produced by this project?</th></tr></thead>
+    <tbody>
+      <tr><td><span class="v na">PENDING</span></td><td>Received, waiting to be judged.</td><td>Yes</td></tr>
+      <tr><td><span class="v na">RUNNING</span></td><td>Being judged right now.</td><td>Written, but never visible to the user (see 23.3)</td></tr>
+      <tr><td><span class="v ok">ACCEPTED</span></td><td>Every test produced the correct output.</td><td>Yes</td></tr>
+      <tr><td><span class="v bad">WRONG_ANSWER</span></td><td>The program ran and finished, but printed something different from the expected output.</td><td>Yes</td></tr>
+      <tr><td><span class="v bad">TIME_LIMIT_EXCEEDED</span></td><td>The program did not finish in time.</td><td>Yes</td></tr>
+      <tr><td><span class="v bad">RUNTIME_ERROR</span></td><td>The program crashed or exited with a non-zero status.</td><td>Yes</td></tr>
+      <tr><td><span class="v bad">COMPILE_ERROR</span></td><td>The C++ or Java source could not be compiled.</td><td>Yes</td></tr>
+      <tr><td><span class="v bad">MEMORY_LIMIT_EXCEEDED</span></td><td>The program used too much memory.</td><td>No. Defined, never assigned. Memory exhaustion shows up as RUNTIME_ERROR.</td></tr>
+      <tr><td><span class="v warn">INTERNAL_ERROR</span></td><td>The judge itself failed.</td><td>Yes</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Other terms</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Term</th><th>Meaning here</th></tr></thead>
+    <tbody>
+      <tr><td>Problem</td><td>A puzzle with a statement, limits, tags and test cases.</td></tr>
+      <tr><td>Test case</td><td>One input together with its correct output. <em>Public</em> test cases are shown on the problem page as samples; <em>hidden</em> ones are never sent to normal users.</td></tr>
+      <tr><td>Submission</td><td>One attempt: a user's source code for one problem in one language, plus its verdict.</td></tr>
+      <tr><td>Slug</td><td>The URL-friendly name of a problem, e.g. <code>two-sum</code> in <code>/problems/two-sum</code>.</td></tr>
+      <tr><td>Container</td><td>An isolated process environment started by Docker. Shares the host's kernel but sees its own file system, network and limits.</td></tr>
+      <tr><td>Image</td><td>The template a container is started from. This project uses three runner images: <code>judge-runner-cpp</code>, <code>judge-runner-python</code>, <code>judge-runner-java</code>.</td></tr>
+      <tr><td>JWT</td><td>JSON Web Token. A signed piece of text the server gives you at login, which you send back with every request to prove who you are.</td></tr>
+      <tr><td>Access token / refresh token</td><td>Two JWTs. The access token proves identity for 15 minutes; the refresh token lasts 7 days and is only used to get a new access token.</td></tr>
+      <tr><td>Role</td><td><code>USER</code> or <code>ADMIN</code>. Decides what you may do.</td></tr>
+      <tr><td>Endpoint</td><td>One URL plus HTTP method that the backend answers, such as <code>POST /api/submissions</code>.</td></tr>
+      <tr><td>DTO</td><td>Data Transfer Object: a small class describing the JSON shape of a request or response.</td></tr>
+      <tr><td>Entity</td><td>A Java class mapped to a database table.</td></tr>
+      <tr><td>Standard input / output</td><td>The text stream a program reads from and the one it prints to. The judge feeds each test's input on standard input and captures standard output.</td></tr>
+      <tr><td>Exit code</td><td>A number a program returns when it ends. 0 means success; anything else is treated as a crash.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ PART II ============ -->
+<div class="part-head">
+  <div class="eyebrow">Part II</div>
+  <h2>The structure</h2>
+  <p>The pieces, the files, the layers inside the backend, the database tables and every endpoint.</p>
+</div>
+
+<section class="ch" id="parts">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">4</span>The moving parts</h3>
+  <p>When the system runs under Docker Compose, five containers start, and during judging more short-lived containers come and go.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart LR
+  U["Browser: React app"] -->|"HTTP port 3000"| N["frontend container: nginx"]
+  N -->|"static files"| U
+  N -->|"proxy /api/*"| B["backend container: Spring Boot, port 8080"]
+  B -->|"JDBC"| P[("postgres: PostgreSQL 16")]
+  B -.->|"configured, never used"| R[("redis: Redis 7")]
+  B -->|"docker CLI over /var/run/docker.sock"| D["Host Docker daemon"]
+  D -->|"starts and removes"| J["runner containers: cpp / python / java"]
+  B ---|"shared folder /tmp/judge-workspace"| J
+  </pre></div>
+  <p class="caption">Figure 4.1 · Runtime architecture under Docker Compose.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Piece</th><th>What it does</th><th>Lives in</th></tr></thead>
+    <tbody>
+      <tr><td>Browser app</td><td>All screens. Holds the login tokens in the browser's <code>localStorage</code>. Calls the backend with JSON over HTTP.</td><td><code>frontend/src</code></td></tr>
+      <tr><td>nginx (frontend container)</td><td>Serves the built JavaScript and HTML. Forwards any <code>/api/...</code> request to the backend so the browser only ever talks to one address.</td><td><code>frontend/nginx.conf</code>, <code>frontend/Dockerfile</code></td></tr>
+      <tr><td>Backend</td><td>Authentication, problem management, submissions, judging, leaderboard. One Java process.</td><td><code>backend/src/main/java/com/cpplatform</code></td></tr>
+      <tr><td>PostgreSQL</td><td>Stores everything permanent. Tables are created automatically by Hibernate on startup.</td><td><code>docker-compose.yml</code> (volume <code>pgdata</code>)</td></tr>
+      <tr><td>Redis</td><td>Started and configured, but no code reads or writes it. Reserved for a future leaderboard.</td><td><code>docker-compose.yml</code>, <code>application.yml</code></td></tr>
+      <tr><td>Docker daemon</td><td>The host's Docker engine. The backend drives it by running the <code>docker</code> command-line tool, which talks to the daemon through the mounted socket file.</td><td>Your machine</td></tr>
+      <tr><td>Runner containers</td><td>One container per compile step and one per test case. Each lives for a fraction of a second to a few seconds.</td><td><code>docker/runners/Dockerfile.*</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Why the backend runs Docker from inside Docker</h4>
+  <p>The backend itself runs in a container, yet it has to start other containers. Rather than run a full Docker engine inside the backend container ("Docker-in-Docker"), the project mounts the host's Docker control socket, <code>/var/run/docker.sock</code>, into the backend. The backend container only has the Docker <em>client</em>; every <code>docker run</code> it issues is executed by the host's daemon. The new runner containers are therefore <em>siblings</em> of the backend, not children. This pattern is sometimes called "Docker-out-of-Docker". It is simple and fast, and it has a serious security cost covered in chapter 22.</p>
+  <p>It also creates a path puzzle. The backend writes each submission's source code to a folder, then asks the daemon to mount that folder into a runner container. The daemon interprets the path <em>on the host</em>, not inside the backend container. That is why <code>docker-compose.yml</code> mounts <code>/tmp/judge-workspace</code> at the identical path on both sides: the folder the backend writes into and the folder the daemon mounts are the same physical directory. If the two paths differed, the daemon would mount an empty folder and every submission would fail to compile.</p>
+</section>
+
+<section class="ch" id="stack">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">5</span>Technology stack</h3>
+  <p>Versions below are the ones Maven and npm actually resolved when the project was built for this handbook.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Layer</th><th>Technology</th><th>Version</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td>Backend language</td><td>Java</td><td>17 (target)</td><td>Records and switch expressions are used.</td></tr>
+      <tr><td>Framework</td><td>Spring Boot</td><td>3.3.2</td><td>Web server (embedded Tomcat), dependency injection, configuration.</td></tr>
+      <tr><td>Security</td><td>Spring Security</td><td>6.3.1</td><td>Filter chain, URL rules, method rules, password hashing.</td></tr>
+      <tr><td>Persistence</td><td>Spring Data JPA + Hibernate</td><td>Hibernate 6.5.2</td><td>Maps entities to tables, generates queries from method names.</td></tr>
+      <tr><td>Database driver</td><td>PostgreSQL JDBC</td><td>managed by Boot</td><td>Connection to Postgres.</td></tr>
+      <tr><td>JSON</td><td>Jackson</td><td>2.17.2</td><td>Converts DTO records to and from JSON.</td></tr>
+      <tr><td>Tokens</td><td>JJWT</td><td>0.12.6</td><td>Creates and verifies JWTs.</td></tr>
+      <tr><td>Boilerplate</td><td>Lombok</td><td>1.18.34</td><td>Generates getters, setters, builders, constructors and the logger.</td></tr>
+      <tr><td>Validation</td><td>Jakarta Bean Validation</td><td>managed by Boot</td><td><code>@NotBlank</code>, <code>@Email</code>, <code>@Size</code> on request DTOs.</td></tr>
+      <tr><td>Database</td><td>PostgreSQL</td><td>16 (alpine image)</td><td>All persistent data.</td></tr>
+      <tr><td>Cache (unused)</td><td>Redis</td><td>7 (alpine image)</td><td>Configured via <code>spring-boot-starter-data-redis</code>, not used.</td></tr>
+      <tr><td>Frontend library</td><td>React</td><td>18.3</td><td>UI components.</td></tr>
+      <tr><td>Routing</td><td>React Router</td><td>6.x</td><td>Client-side pages.</td></tr>
+      <tr><td>HTTP client</td><td>Axios</td><td>1.x</td><td>API calls, token interceptors.</td></tr>
+      <tr><td>Code editor</td><td>@monaco-editor/react</td><td>4.6</td><td>VS Code's editor in the browser. Loads Monaco itself from a CDN at runtime.</td></tr>
+      <tr><td>Build tool</td><td>Vite</td><td>5.4</td><td>Dev server with API proxy; production build to <code>dist/</code>.</td></tr>
+      <tr><td>Web server</td><td>nginx</td><td>alpine image</td><td>Serves the built frontend and proxies the API.</td></tr>
+      <tr><td>Sandbox</td><td>Docker</td><td>host engine</td><td>Runs every compile and test in isolation.</td></tr>
+      <tr><td>Runner toolchains</td><td>GCC 13, Python 3.11, Temurin JDK 17</td><td>from runner images</td><td>Compile and run submissions.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="ch" id="repo">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">6</span>The repository, file by file</h3>
+  <p>Every file in the project, with what it is responsible for. Line counts are approximate.</p>
+  <pre class="code tree"><code><span class="d">cp-platform/</span>
+├── README.md                       <span class="c">overview, run instructions, deferred features</span>
+├── docker-compose.yml              <span class="c">5 services: postgres, redis, backend, frontend (+ volume)</span>
+├── hs_err_pid31500.log             <span class="c">unrelated crash log from VS Code's Java tooling; safe to delete</span>
+├── <span class="d">docker/runners/</span>
+│   ├── Dockerfile.cpp              <span class="c">gcc:13 + non-root user 10001, workdir /box</span>
+│   ├── Dockerfile.python           <span class="c">python:3.11-slim + same user</span>
+│   ├── Dockerfile.java             <span class="c">eclipse-temurin:17-jdk + same user</span>
+│   └── README.md                   <span class="c">how to build the runner images</span>
+├── <span class="d">backend/</span>
+│   ├── Dockerfile                  <span class="c">2-stage: Maven build on JDK 17, then JRE 17 + docker CLI</span>
+│   ├── pom.xml                     <span class="c">dependencies (Spring Boot 3.3.2 parent)</span>
+│   └── <span class="d">src/main/</span>
+│       ├── resources/application.yml   <span class="c">all configuration, env-var overridable</span>
+│       └── <span class="d">java/com/cpplatform/</span>
+│           ├── CpPlatformApplication.java   <span class="c">entry point; @EnableAsync</span>
+│           ├── <span class="d">config/</span>
+│           │   └── SecurityConfig.java      <span class="c">filter chain, URL rules, CORS, BCrypt, auth manager</span>
+│           ├── <span class="d">security/</span>
+│           │   ├── JwtService.java          <span class="c">create / parse / validate tokens</span>
+│           │   ├── JwtAuthFilter.java       <span class="c">reads Bearer header, sets the logged-in user</span>
+│           │   ├── RestAuthEntryPoint.java  <span class="c">JSON 401 responses</span>
+│           │   └── RestAccessDeniedHandler.java <span class="c">JSON 403 responses</span>
+│           ├── <span class="d">controller/</span>                  <span class="c">HTTP endpoints (thin)</span>
+│           │   ├── AuthController.java      <span class="c">/api/auth/register, login, refresh</span>
+│           │   ├── ProblemController.java   <span class="c">/api/problems CRUD + admin view</span>
+│           │   ├── SubmissionController.java <span class="c">/api/submissions submit, get, mine</span>
+│           │   ├── LeaderboardController.java <span class="c">/api/leaderboard</span>
+│           │   └── UserController.java      <span class="c">/api/users/me</span>
+│           ├── <span class="d">service/</span>                     <span class="c">business logic</span>
+│           │   ├── AuthService.java         <span class="c">register, login, refresh, token issuing</span>
+│           │   ├── UserDetailsServiceImpl.java <span class="c">loads users for password checking</span>
+│           │   ├── ProblemService.java      <span class="c">create, list, view, edit, delete, slugs, tags</span>
+│           │   ├── SubmissionService.java   <span class="c">store submission, start judging, views</span>
+│           │   ├── JudgeService.java        <span class="c">the judge: workspace, docker runs, verdicts</span>
+│           │   ├── RunnerConfig.java        <span class="c">per-language image, file name, commands</span>
+│           │   └── LeaderboardService.java  <span class="c">solved-count ranking</span>
+│           ├── <span class="d">repository/</span>                  <span class="c">7 Spring Data interfaces (queries)</span>
+│           ├── <span class="d">entity/</span>                      <span class="c">6 tables as classes + 3 enums</span>
+│           │   ├── User, Problem, Tag, TestCase, Submission,
+│           │   │   SubmissionResult, UserProgress
+│           │   └── Role, Language, SubmissionStatus
+│           ├── <span class="d">dto/</span>                         <span class="c">JSON shapes as Java records</span>
+│           │   ├── AuthDtos, ProblemDtos, SubmissionDtos, LeaderboardDtos
+│           └── <span class="d">exception/</span>
+│               ├── ApiException.java        <span class="c">error with an HTTP status</span>
+│               └── GlobalExceptionHandler.java <span class="c">turns exceptions into JSON</span>
+└── <span class="d">frontend/</span>
+    ├── Dockerfile                  <span class="c">node 20 build, then nginx</span>
+    ├── nginx.conf                  <span class="c">static files + /api proxy + SPA fallback</span>
+    ├── package.json, vite.config.js, index.html
+    └── <span class="d">src/</span>
+        ├── main.jsx                <span class="c">mounts the app: Router → AuthProvider → App</span>
+        ├── App.jsx                 <span class="c">top bar, routes, RequireAuth / RequireAdmin</span>
+        ├── styles.css              <span class="c">dark theme, verdict badges</span>
+        ├── api/client.js           <span class="c">axios instance, token attach + refresh on 401</span>
+        ├── context/AuthContext.jsx <span class="c">who is logged in; login/register/logout</span>
+        └── <span class="d">pages/</span>
+            ├── ProblemList.jsx, ProblemDetail.jsx
+            ├── SubmissionStatus.jsx, Leaderboard.jsx
+            ├── Login.jsx, Register.jsx
+            └── AdminNewProblem.jsx, AdminEditProblem.jsx</code></pre>
+  <p>The README refers to an <code>architecture.md</code> "shared earlier"; that file is not in the repository.</p>
+</section>
+
+<section class="ch" id="layers">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">7</span>Inside the backend</h3>
+  <p>The backend follows the conventional Spring layering. Each layer only calls the one below it, with one exception noted at the end.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TB
+  F["Security filters: JwtAuthFilter, URL rules"] --> C["Controllers: parse HTTP, validate, pick principal"]
+  C --> S["Services: business rules, transactions"]
+  S --> R["Repositories: Spring Data interfaces"]
+  R --> E["Entities: JPA classes"]
+  E --> DB[("PostgreSQL")]
+  S --> J["JudgeService: Docker processes"]
+  C -.-> D["DTO records: request and response shapes"]
+  S -.-> D
+  X["GlobalExceptionHandler"] -.->|"catches exceptions from controllers and services"| C
+  </pre></div>
+  <p class="caption">Figure 7.1 · Backend layers.</p>
+
+  <h4>Controllers</h4>
+  <p>Controllers are deliberately thin. They declare the URL, read path variables and query parameters, trigger validation with <code>@Valid</code>, receive the logged-in user via <code>@AuthenticationPrincipal User</code>, call one service method and wrap the result in <code>ResponseEntity.ok(...)</code>. The principal is the actual <code>User</code> entity, because <code>JwtAuthFilter</code> places the entity itself into the security context (chapter 13).</p>
+
+  <h4>Services</h4>
+  <p>All decisions live here: does this email already exist, what is the slug, may this user see this submission, which verdict does this run deserve. Methods that touch several rows are annotated <code>@Transactional</code> so they succeed or fail as a whole. <code>ProblemService.create</code>, <code>update</code>, <code>delete</code>, <code>getBySlug</code>, <code>getForAdmin</code> and <code>JudgeService.judgeAsync</code> are transactional; the rest rely on the per-call transactions of repository methods.</p>
+
+  <h4>Repositories</h4>
+  <p>Seven interfaces extend <code>JpaRepository</code>. Spring Data generates their implementations at startup by parsing method names. For example <code>findByProblemIdAndIsPublicTrue(Long problemId)</code> becomes "select test cases whose problem id equals ? and whose isPublic is true". Only one query is hand-written: <code>TestCaseRepository.deleteByProblemId</code>, a bulk JPQL delete marked <code>@Modifying</code>.</p>
+
+  <h4>Entities</h4>
+  <p>Seven classes map to tables (chapter 8). All use Lombok's <code>@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder</code>; fields with default values use <code>@Builder.Default</code> so the builder respects them. Timestamps are filled by <code>@PrePersist</code> callbacks. Relationships to other entities are <code>LAZY</code>: the related row is loaded only when first accessed.</p>
+
+  <h4>DTOs</h4>
+  <p>Requests and responses are Java <em>records</em>, grouped as nested types inside holder classes (<code>AuthDtos.RegisterRequest</code>, <code>ProblemDtos.ProblemDetail</code>, and so on). Entities are never returned directly. This is what keeps hidden test cases and password hashes out of responses: a DTO can only expose the fields it declares.</p>
+
+  <h4>Cross-cutting pieces</h4>
+  <ul>
+    <li><code>ApiException</code> carries a message and an HTTP status. Services throw it for expected failures (not found, conflict, forbidden).</li>
+    <li><code>GlobalExceptionHandler</code> turns <code>ApiException</code> into <code>{"error": message}</code> with its status, validation failures into a 400 with one entry per field, and <em>any other exception</em> into a 500 with <code>"Internal server error: " + message</code>. That last rule matters for several cases in Part IV.</li>
+  </ul>
+
+  <h4>The one layering exception</h4>
+  <p><code>ProblemController.delete</code> calls <code>SubmissionRepository.countByProblemId</code> directly and passes the count into the service. It works, but the check belongs inside <code>ProblemService.delete</code>.</p>
+</section>
+
+<section class="ch" id="data">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">8</span>The data model</h3>
+  <p>There are no migration scripts. With <code>spring.jpa.hibernate.ddl-auto: update</code>, Hibernate inspects the entities at every startup and creates any missing tables and columns. It never drops or renames anything.</p>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  USERS ||--o{ SUBMISSIONS : "makes"
+  PROBLEMS ||--o{ SUBMISSIONS : "receives"
+  PROBLEMS ||--|{ TEST_CASES : "has"
+  PROBLEMS }o--o{ TAGS : "problem_tags"
+  SUBMISSIONS ||--o{ SUBMISSION_RESULTS : "produces"
+  TEST_CASES ||--o{ SUBMISSION_RESULTS : "graded in"
+  USERS ||--o{ USER_PROGRESS : "has"
+  PROBLEMS ||--o{ USER_PROGRESS : "tracked in"
+  USERS {
+    bigint id PK
+    varchar email UK
+    varchar username
+    varchar password_hash
+    varchar role
+    timestamp created_at
+  }
+  PROBLEMS {
+    bigint id PK
+    varchar title
+    varchar slug UK
+    varchar difficulty
+    text statement
+    text constraints
+    int time_limit_ms
+    int memory_limit_mb
+    bigint created_by
+    timestamp created_at
+  }
+  TEST_CASES {
+    bigint id PK
+    bigint problem_id FK
+    text input
+    text expected_output
+    boolean is_public
+    int weight
+  }
+  SUBMISSIONS {
+    bigint id PK
+    bigint user_id FK
+    bigint problem_id FK
+    varchar language
+    text source_code
+    varchar status
+    int score
+    int runtime_ms
+    int memory_kb
+    text error_message
+    timestamp submitted_at
+    timestamp judged_at
+  }
+  SUBMISSION_RESULTS {
+    bigint id PK
+    bigint submission_id FK
+    bigint test_case_id FK
+    varchar verdict
+    int runtime_ms
+    int memory_kb
+  }
+  USER_PROGRESS {
+    bigint id PK
+    bigint user_id FK
+    bigint problem_id FK
+    boolean solved
+    bigint best_submission_id
+    int attempts
+  }
+  TAGS {
+    bigint id PK
+    varchar name UK
+  }
+  </pre></div>
+  <p class="caption">Figure 8.1 · Tables and relationships. <code>problem_tags</code> is a join table with columns <code>problem_id</code> and <code>tag_id</code>.</p>
+
+  <h4>Table notes</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Table</th><th>Important details</th></tr></thead>
+    <tbody>
+      <tr><td><code>users</code></td><td class="wrap">Email is unique; <strong>username is not</strong>, so two people can both be "alex". Email uniqueness is case-sensitive. <code>password_hash</code> is a BCrypt string. <code>role</code> is stored as text: <code>USER</code> or <code>ADMIN</code>.</td></tr>
+      <tr><td><code>problems</code></td><td class="wrap">Slug is unique and never changes after creation. <code>created_by</code> stores the admin's user id as a plain number, without a foreign key. <code>memory_limit_mb</code> is stored and displayed but the judge ignores it.</td></tr>
+      <tr><td><code>tags</code>, <code>problem_tags</code></td><td class="wrap">Tags are shared between problems and created on first use. Removing a tag from every problem leaves the tag row behind.</td></tr>
+      <tr><td><code>test_cases</code></td><td class="wrap"><code>weight</code> is stored (default 1) but scoring ignores it; every test counts equally. Mapped from the problem with <code>cascade = ALL, orphanRemoval = true</code>, although the service code manages test cases through the repository instead of that collection.</td></tr>
+      <tr><td><code>submissions</code></td><td class="wrap">Keeps the full source code. <code>memory_kb</code> is never filled in. <code>runtime_ms</code> is the slowest test's wall-clock time including container start-up.</td></tr>
+      <tr><td><code>submission_results</code></td><td class="wrap">One row per test case per judged submission. Its foreign key to <code>test_cases</code> is what prevents editing a problem after anyone has submitted (case C4).</td></tr>
+      <tr><td><code>user_progress</code></td><td class="wrap">One row per (user, problem), enforced by a unique constraint. <code>solved</code> flips to true on the first accepted submission and stays true. <code>attempts</code> counts judged submissions that reached the test stage. <code>best_submission_id</code> is the first accepted submission, not the fastest.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>How rows come into existence</h4>
+  <ul>
+    <li><strong>Register</strong> inserts one <code>users</code> row.</li>
+    <li><strong>Create problem</strong> inserts one <code>problems</code> row, any new <code>tags</code>, the <code>problem_tags</code> links and one <code>test_cases</code> row per test.</li>
+    <li><strong>Submit</strong> inserts one <code>submissions</code> row (status PENDING).</li>
+    <li><strong>Judging</strong> updates that submission, inserts one <code>submission_results</code> row per test, and inserts or updates one <code>user_progress</code> row.</li>
+  </ul>
+</section>
+
+<section class="ch" id="api">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">9</span>The API</h3>
+  <p>All endpoints live under <code>/api</code> and speak JSON. Authenticated calls send <code>Authorization: Bearer &lt;accessToken&gt;</code>.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Method</th><th>Path</th><th>Who may call</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>POST</td><td><code>/api/auth/register</code></td><td>Anyone</td><td>Create account, returns tokens</td></tr>
+      <tr><td>POST</td><td><code>/api/auth/login</code></td><td>Anyone</td><td>Log in, returns tokens</td></tr>
+      <tr><td>POST</td><td><code>/api/auth/refresh</code></td><td>Anyone with a refresh token</td><td>New token pair</td></tr>
+      <tr><td>GET</td><td><code>/api/problems</code></td><td>Anyone</td><td>Paged list; <code>?difficulty=&amp;page=&amp;size=</code></td></tr>
+      <tr><td>GET</td><td><code>/api/problems/{slug}</code></td><td>Anyone</td><td>Problem with public tests only</td></tr>
+      <tr><td>GET</td><td><code>/api/problems/{id}/admin</code></td><td>ADMIN</td><td>Problem with all tests, for editing</td></tr>
+      <tr><td>POST</td><td><code>/api/problems</code></td><td>ADMIN</td><td>Create problem</td></tr>
+      <tr><td>PUT</td><td><code>/api/problems/{id}</code></td><td>ADMIN</td><td>Replace problem and its tests</td></tr>
+      <tr><td>DELETE</td><td><code>/api/problems/{id}</code></td><td>ADMIN</td><td>Delete if no submissions exist</td></tr>
+      <tr><td>POST</td><td><code>/api/submissions</code></td><td>Logged in</td><td>Submit code; judging starts in background</td></tr>
+      <tr><td>GET</td><td><code>/api/submissions/{id}</code></td><td>Owner or ADMIN</td><td>Status, score and per-test results</td></tr>
+      <tr><td>GET</td><td><code>/api/submissions/me</code></td><td>Logged in</td><td>Own submissions, newest first (not used by the UI)</td></tr>
+      <tr><td>GET</td><td><code>/api/leaderboard</code></td><td>Anyone</td><td>Top users by solved count; <code>?limit=</code> (default 50)</td></tr>
+      <tr><td>GET</td><td><code>/api/users/me</code></td><td>Logged in</td><td>Own id, email, username, role (not used by the UI)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Request and response shapes</h4>
+  <h5>Register / login / refresh</h5>
+  <pre class="code"><code><span class="cm">// POST /api/auth/register</span>
+{ "email": "ada@example.com", "username": "ada", "password": "correct-horse" }
+<span class="cm">// POST /api/auth/login</span>
+{ "email": "ada@example.com", "password": "correct-horse" }
+<span class="cm">// POST /api/auth/refresh</span>
+{ "refreshToken": "eyJhbGciOi..." }
+
+<span class="cm">// Response to all three (AuthResponse)</span>
+{
+  "accessToken":  "eyJhbGciOi...",
+  "refreshToken": "eyJhbGciOi...",
+  "userId": 7,
+  "username": "ada",
+  "role": "USER"
+}</code></pre>
+
+  <h5>Create or edit a problem</h5>
+  <pre class="code"><code><span class="cm">// POST /api/problems   or   PUT /api/problems/{id}</span>
+{
+  "title": "Sum of Two",
+  "difficulty": "EASY",                 <span class="cm">// EASY | MEDIUM | HARD, required</span>
+  "statement": "Read a and b, print a+b.",  <span class="cm">// required</span>
+  "constraints": "-10^9 &lt;= a, b &lt;= 10^9",   <span class="cm">// optional</span>
+  "timeLimitMs": 2000,                  <span class="cm">// optional, default 2000</span>
+  "memoryLimitMb": 256,                 <span class="cm">// optional, default 256 (not enforced)</span>
+  "tags": ["math", "implementation"],
+  "testCases": [                        <span class="cm">// at least one, checked in the service</span>
+    { "input": "3 4", "expectedOutput": "7", "isPublic": true,  "weight": 1 },
+    { "input": "-5 5", "expectedOutput": "0", "isPublic": false, "weight": 1 }
+  ]
+}
+<span class="cm">// Response (ProblemSummary)</span>
+{ "id": 12, "title": "Sum of Two", "slug": "sum-of-two", "difficulty": "EASY", "tags": ["math","implementation"] }</code></pre>
+
+  <h5>View a problem (public)</h5>
+  <pre class="code"><code><span class="cm">// GET /api/problems/sum-of-two  (ProblemDetail)</span>
+{
+  "id": 12, "title": "Sum of Two", "slug": "sum-of-two", "difficulty": "EASY",
+  "statement": "...", "constraints": "...", "timeLimitMs": 2000, "memoryLimitMb": 256,
+  "tags": ["math", "implementation"],
+  "publicTestCases": [ { "input": "3 4", "expectedOutput": "7" } ]
+}</code></pre>
+  <p>The admin variant (<code>GET /api/problems/12/admin</code>) returns the same fields but replaces <code>publicTestCases</code> with <code>testCases</code>, each including <code>id</code>, <code>isPublic</code> and <code>weight</code>. The list endpoint returns a Spring Data page object: <code>{"content": [ProblemSummary...], "totalElements": ..., "totalPages": ..., "number": ..., ...}</code>.</p>
+
+  <h5>Submit and poll</h5>
+  <pre class="code"><code><span class="cm">// POST /api/submissions</span>
+{ "problemId": 12, "language": "CPP", "sourceCode": "#include ..." }   <span class="cm">// CPP | PYTHON | JAVA</span>
+
+<span class="cm">// Response, and later GET /api/submissions/31  (SubmissionView)</span>
+{
+  "id": 31, "status": "WRONG_ANSWER", "score": 50,
+  "runtimeMs": 812, "memoryKb": null, "errorMessage": null,
+  "submittedAt": "2026-10-09T10:15:02.114Z",
+  "results": [
+    { "testCaseId": 40, "isPublic": true,  "verdict": "ACCEPTED",     "runtimeMs": 790, "memoryKb": null },
+    { "testCaseId": 41, "isPublic": false, "verdict": "WRONG_ANSWER", "runtimeMs": 812, "memoryKb": null }
+  ]
+}</code></pre>
+  <p>The submit response always has an empty <code>results</code> list. The <code>/me</code> list also returns empty <code>results</code> for each item, to keep it cheap.</p>
+
+  <h4>Error shapes</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Status</th><th>Body</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td>400</td><td><code>{"username": "size must be between 3 and 30"}</code></td><td>Bean validation failed. One key per bad field, <strong>no</strong> <code>error</code> key.</td></tr>
+      <tr><td>400</td><td><code>{"error": "At least one test case is required"}</code></td><td>Service-level validation.</td></tr>
+      <tr><td>401</td><td><code>{"error": "Authentication required or token expired"}</code></td><td>No valid access token on a protected endpoint.</td></tr>
+      <tr><td>403</td><td><code>{"error": "You don't have permission to do that"}</code></td><td>Logged in, wrong role (URL or method rule).</td></tr>
+      <tr><td>403</td><td><code>{"error": "Not authorized to view this submission"}</code></td><td>Someone else's submission.</td></tr>
+      <tr><td>404</td><td><code>{"error": "Problem not found"}</code></td><td>Unknown slug or id; unknown submission.</td></tr>
+      <tr><td>409</td><td><code>{"error": "Email already registered"}</code></td><td>Duplicate registration; also deleting a problem with submissions.</td></tr>
+      <tr><td>500</td><td><code>{"error": "Internal server error: ..."}</code></td><td>Anything else, including wrong passwords, malformed JSON and unknown URLs (chapter 24).</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="ch" id="frontend">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">10</span>Inside the frontend</h3>
+  <p>The frontend is a single-page application: the browser downloads one HTML file and one JavaScript bundle (about 250 KB, 82 KB compressed), and from then on React swaps screens without reloading the page.</p>
+
+  <h4>Component tree</h4>
+  <pre class="code"><code>main.jsx
+└── &lt;BrowserRouter&gt;              <span class="cm">URL ↔ screen</span>
+    └── &lt;AuthProvider&gt;           <span class="cm">who is logged in</span>
+        └── &lt;App&gt;                <span class="cm">top bar + &lt;Routes&gt;</span>
+            ├── /                         ProblemList
+            ├── /problems/:slug           ProblemDetail
+            ├── /submissions/:id          RequireAuth → SubmissionStatus
+            ├── /leaderboard              Leaderboard
+            ├── /admin/new-problem        RequireAdmin → AdminNewProblem
+            ├── /admin/edit-problem/:id   RequireAdmin → AdminEditProblem
+            ├── /login                    Login
+            └── /register                 Register</code></pre>
+  <p>There is no catch-all route, so an unknown URL shows the top bar with an empty page beneath it.</p>
+
+  <h4>Authentication state</h4>
+  <p><code>AuthContext</code> keeps one object, <code>user = {id, username, role}</code>, and exposes <code>login</code>, <code>register</code> and <code>logout</code>. On page load it restores <code>user</code> from <code>localStorage</code>. After a successful login or register it stores three keys: <code>accessToken</code>, <code>refreshToken</code> and <code>user</code>. Logout calls <code>localStorage.clear()</code> and sets <code>user</code> to null; nothing is sent to the server.</p>
+  <p><code>RequireAuth</code> redirects to <code>/login</code> if there is no user. <code>RequireAdmin</code> redirects to <code>/</code> unless <code>user.role === 'ADMIN'</code>. These guards are about user experience only. The real enforcement is on the server; anyone can edit <code>localStorage</code> to claim to be an admin, and the server will still refuse their admin calls.</p>
+
+  <h4>The API client</h4>
+  <p><code>api/client.js</code> creates an Axios instance with base URL <code>/api</code> and two interceptors:</p>
+  <ul>
+    <li><strong>Request interceptor:</strong> reads <code>accessToken</code> from <code>localStorage</code> and adds the <code>Authorization</code> header.</li>
+    <li><strong>Response interceptor:</strong> if a response is 401 and the request has not been retried, it posts the refresh token to <code>/api/auth/refresh</code> (with plain Axios so the interceptor does not loop), stores the new pair, and replays the original request. If refreshing fails, it clears storage and does a full-page redirect to <code>/login</code>.</li>
+  </ul>
+  <p>The relative base URL is what makes the same build work in development and production. In development, Vite's dev server proxies <code>/api</code> to <code>localhost:8080</code>. In production, nginx proxies <code>/api/</code> to <code>backend:8080</code>.</p>
+
+  <h4>Pages in brief</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Page</th><th>Calls</th><th>Notable behaviour</th></tr></thead>
+    <tbody>
+      <tr><td>ProblemList</td><td><code>GET /problems</code></td><td class="wrap">Re-fetches when the difficulty filter changes. Shows only page 0 (20 problems); there are no paging controls.</td></tr>
+      <tr><td>ProblemDetail</td><td><code>GET /problems/{slug}</code>, <code>POST /submissions</code>, <code>DELETE /problems/{id}</code></td><td class="wrap">Monaco editor with per-language templates. Changing language replaces the code with the template. Delete asks for confirmation with the browser's <code>confirm()</code>.</td></tr>
+      <tr><td>SubmissionStatus</td><td><code>GET /submissions/{id}</code> every 1.5 s</td><td class="wrap">Stops polling on any final verdict or on error. Labels each row "Sample n" or "Hidden n" by its position.</td></tr>
+      <tr><td>Leaderboard</td><td><code>GET /leaderboard</code></td><td class="wrap">Rank, username, solved count.</td></tr>
+      <tr><td>Login, Register</td><td><code>POST /auth/login</code>, <code>/auth/register</code></td><td class="wrap">Show <code>error</code> from the response, or a generic message when the response has none.</td></tr>
+      <tr><td>AdminNewProblem</td><td><code>POST /problems</code></td><td class="wrap">Starts with two empty test cases. Requires at least one test and at least one marked public (the backend only requires one test).</td></tr>
+      <tr><td>AdminEditProblem</td><td><code>GET /problems/{id}/admin</code>, <code>PUT /problems/{id}</code></td><td class="wrap">Loads everything including hidden tests, sends a full replacement.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>The production container</h4>
+  <p>The frontend Dockerfile has two stages. A Node 20 image runs <code>npm install</code> and <code>npm run build</code>; an nginx image receives only the resulting <code>dist/</code> folder and <code>nginx.conf</code>. The nginx configuration does three things: serves files from <code>/usr/share/nginx/html</code>, proxies <code>/api/</code> to the backend with the usual forwarding headers, and answers any other unknown path with <code>index.html</code> (<code>try_files $uri $uri/ /index.html</code>), so refreshing the browser on <code>/problems/two-sum</code> loads the app instead of a 404.</p>
+</section>
+
+<!-- ============ PART III ============ -->
+<div class="part-head">
+  <div class="eyebrow">Part III</div>
+  <h2>The flows</h2>
+  <p>Step-by-step accounts of every operation, from system start-up to the moment a verdict appears on screen.</p>
+</div>
+
+<section class="ch" id="startup">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">11</span>Starting the system</h3>
+  <h4>Compose start-up order</h4>
+  <ol class="steps">
+    <li><strong>Images build.</strong> <code>docker compose up --build</code> builds the backend image (Maven compiles inside a JDK 17 image, then the JAR is copied into a JRE 17 image that also gets the <code>docker.io</code> client package) and the frontend image. The three runner images are <em>not</em> part of compose and must be built beforehand with the <code>docker build</code> commands in the README.</li>
+    <li><strong>Postgres and Redis start.</strong> Postgres creates the <code>cpplatform</code> database and user on first run, storing data in the <code>pgdata</code> volume. Compose polls <code>pg_isready</code> every 5 seconds, up to 5 tries.</li>
+    <li><strong>Backend starts</strong> only once Postgres reports healthy (<code>depends_on: condition: service_healthy</code>).</li>
+    <li><strong>Frontend starts</strong> after the backend container has been <em>created</em>. Compose does not wait for the backend to be ready, so for the first few seconds API calls through nginx return 502 errors.</li>
+  </ol>
+
+  <h4>What Spring Boot does on start-up</h4>
+  <ol class="steps">
+    <li>Reads <code>application.yml</code>, substituting environment variables such as <code>DB_HOST</code> and <code>JWT_SECRET</code>.</li>
+    <li>Opens a HikariCP connection pool to Postgres (10 connections by default).</li>
+    <li>Hibernate compares the entities with the database and creates or alters tables.</li>
+    <li>Spring Data generates repository implementations from the interfaces.</li>
+    <li>Builds the security filter chain from <code>SecurityConfig</code>.</li>
+    <li><code>@EnableAsync</code> activates background execution using Boot's default task executor (8 core threads, unbounded queue).</li>
+    <li>Configures a Redis connection factory. It connects lazily, so start-up succeeds even if Redis is down, and since nothing uses it, it never connects.</li>
+    <li>Embedded Tomcat starts listening on port 8080.</li>
+  </ol>
+  <p>The database starts empty: no users, no problems, no admin.</p>
+</section>
+
+<section class="ch" id="request">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">12</span>Life of an HTTP request</h3>
+  <p>Every API call, whatever it does, passes through the same pipeline. Understanding it once explains most of the behaviour in Part IV.</p>
+  <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  participant B as Browser
+  participant N as nginx
+  participant T as Tomcat thread
+  participant SF as Security filters
+  participant J as JwtAuthFilter
+  participant A as AuthorizationFilter
+  participant C as Controller
+  participant S as Service and repositories
+  participant H as GlobalExceptionHandler
+  B->>N: GET /api/submissions/31 with Bearer token
+  N->>T: proxy to backend:8080
+  T->>SF: enter filter chain (CORS, session, ...)
+  SF->>J: JwtAuthFilter
+  J->>J: verify signature, expiry, type = access
+  J->>S: load User by email
+  J->>SF: put User + ROLE_USER in SecurityContext
+  SF->>A: check URL rules
+  alt no authentication on a protected URL
+    A-->>B: 401 JSON from RestAuthEntryPoint
+  else wrong role
+    A-->>B: 403 JSON from RestAccessDeniedHandler
+  end
+  A->>C: dispatch to SubmissionController.get
+  C->>S: submissionService.getById(31, user)
+  alt service throws
+    S-->>H: ApiException or other exception
+    H-->>B: JSON error with status
+  else success
+    S-->>C: SubmissionView record
+    C-->>B: 200 JSON
+  end
+  </pre></div>
+  <p class="caption">Figure 12.1 · One authenticated request.</p>
+
+  <h4>Stage by stage</h4>
+  <ol class="steps">
+    <li><strong>nginx</strong> (production) or the <strong>Vite proxy</strong> (development) forwards the request to the backend.</li>
+    <li><strong>Tomcat</strong> assigns a worker thread. Everything up to the response happens on that thread.</li>
+    <li><strong>CORS filter.</strong> Only relevant when the page comes from a different origin. Allowed origins are <code>http://localhost:*</code>. Under compose the browser talks to one origin, so CORS never applies.</li>
+    <li><strong>JwtAuthFilter.</strong> If there is no <code>Bearer</code> header, it does nothing. Otherwise it parses the token. Parsing verifies the signature and throws if the token has expired. If the token is an access token and the email in it belongs to a real user, it loads that user from the database and stores an authentication object whose principal is the <code>User</code> entity and whose authority is <code>ROLE_USER</code> or <code>ROLE_ADMIN</code>. Any exception is swallowed, leaving the request unauthenticated.</li>
+    <li><strong>Authorization.</strong> URL rules are checked in order; the first match wins. If the rule needs an authenticated user and there is none, the entry point returns 401. If the user lacks the role, the access-denied handler returns 403.</li>
+    <li><strong>DispatcherServlet</strong> finds the controller method, converts JSON to the request record and runs bean validation if <code>@Valid</code> is present.</li>
+    <li><strong>Method security.</strong> <code>@PreAuthorize("hasRole('ADMIN')")</code> on <code>getForAdmin</code> and <code>delete</code> is evaluated before the method runs (a second check on top of the URL rule).</li>
+    <li><strong>Controller → service → repository.</strong> Business logic runs; transactional methods open a database transaction.</li>
+    <li><strong>Serialization.</strong> Jackson writes the returned record as JSON.</li>
+    <li><strong>Errors.</strong> Exceptions thrown from a controller or service go to <code>GlobalExceptionHandler</code>. Exceptions inside the security filters never reach it; they are handled by the entry point and access-denied handler.</li>
+  </ol>
+
+  <h4>The URL rules, in evaluation order</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Rule</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>/api/auth/**</code></td><td>permit all</td></tr>
+      <tr><td>2</td><td><code>GET /api/problems/*/admin</code></td><td>ADMIN only. Must come before rule 3, which would otherwise make it public.</td></tr>
+      <tr><td>3</td><td><code>GET /api/problems/**</code></td><td>permit all</td></tr>
+      <tr><td>4</td><td><code>GET /api/leaderboard/**</code></td><td>permit all (also matches <code>/api/leaderboard</code> itself)</td></tr>
+      <tr><td>5–7</td><td><code>POST</code>, <code>PUT</code>, <code>DELETE /api/problems/**</code></td><td>ADMIN only</td></tr>
+      <tr><td>8</td><td>anything else</td><td>must be authenticated</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="ch" id="auth">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">13</span>Accounts and tokens</h3>
+
+  <h4>13.1 Registering</h4>
+  <ol class="steps">
+    <li>The Register page posts <code>{email, username, password}</code> via <code>AuthContext.register</code>.</li>
+    <li><code>/api/auth/**</code> is public, so no token is needed.</li>
+    <li>Validation: email must be well-formed and non-blank, username 3–30 characters, password at least 8. Failures return 400 with per-field messages.</li>
+    <li><code>AuthService.register</code> checks <code>existsByEmail</code>; if taken, 409 "Email already registered".</li>
+    <li>The password is hashed with BCrypt (cost factor 10, random salt built into the hash) and the user is saved with role <code>USER</code>.</li>
+    <li><code>issueTokens</code> creates an access token and a refresh token and returns them with the user's id, username and role.</li>
+    <li>The frontend stores the tokens and user in <code>localStorage</code>, updates <code>user</code> state, and navigates home. The top bar now shows the username.</li>
+  </ol>
+
+  <h4>13.2 Logging in</h4>
+  <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  participant L as Login page
+  participant AC as AuthController
+  participant AS as AuthService
+  participant AM as AuthenticationManager
+  participant UD as UserDetailsServiceImpl
+  participant DB as Postgres
+  L->>AC: POST /api/auth/login {email, password}
+  AC->>AS: login(req)
+  AS->>AM: authenticate(email, password)
+  AM->>UD: loadUserByUsername(email)
+  UD->>DB: select user by email
+  DB-->>UD: row with BCrypt hash
+  UD-->>AM: UserDetails(email, hash, ROLE_X)
+  AM->>AM: BCrypt.matches(password, hash)
+  alt password wrong or email unknown
+    AM-->>AC: BadCredentialsException
+    AC-->>L: 500 with Bad credentials message
+  else correct
+    AS->>DB: select user by email (again)
+    AS-->>AC: AuthResponse with 2 tokens
+    AC-->>L: 200
+  end
+  </pre></div>
+  <p class="caption">Figure 13.1 · Login. Spring's <code>DaoAuthenticationProvider</code> reports an unknown email and a wrong password the same way, so the response does not reveal which accounts exist.</p>
+  <p>The wrong-password path returns status 500 because <code>BadCredentialsException</code> is not handled specifically and falls into the catch-all handler. The login page displays the text "Internal server error: Bad credentials". It should be a 401.</p>
+
+  <h4>13.3 What is inside the tokens</h4>
+  <p>Both tokens are JWTs signed with HMAC using the <code>jwt.secret</code> setting. JJWT chooses the strongest HMAC variant the key length allows; the shipped secrets are 57 and 62 bytes long, which selects HS384. A decoded access token payload looks like this:</p>
+  <pre class="code"><code>{
+  "sub": "ada@example.com",   <span class="cm">// identity: the email</span>
+  "role": "USER",
+  "userId": 7,
+  "type": "access",           <span class="cm">// "refresh" in a refresh token</span>
+  "iat": 1791540902,          <span class="cm">// issued at (seconds)</span>
+  "exp": 1791541802           <span class="cm">// +15 min; refresh tokens: +7 days</span>
+}</code></pre>
+  <p>The refresh token contains only <code>sub</code>, <code>type</code>, <code>iat</code> and <code>exp</code>. The <code>role</code> and <code>userId</code> claims in the access token are never read by the backend; the filter always loads the user from the database. That means a role change takes effect on the user's very next request, at the cost of one database query per authenticated request.</p>
+  <p>Tokens are signed, not encrypted. Anyone holding one can read its contents; they just cannot change them without breaking the signature.</p>
+
+  <h4>13.4 An authenticated request</h4>
+  <p>Covered step by step in chapter 12. In short: header → signature and expiry check → type must be "access" → user loaded by email → principal set → URL rule check → controller receives the <code>User</code> entity through <code>@AuthenticationPrincipal</code>.</p>
+
+  <h4>13.5 Silent refresh</h4>
+  <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  participant P as Page
+  participant AX as Axios interceptors
+  participant BE as Backend
+  P->>AX: client.get /submissions/31
+  AX->>BE: GET with expired access token
+  BE-->>AX: 401 (filter ignored the expired token)
+  AX->>BE: POST /api/auth/refresh {refreshToken}
+  alt refresh token still valid
+    BE-->>AX: new access + refresh tokens
+    AX->>AX: save both to localStorage
+    AX->>BE: retry GET with new access token
+    BE-->>P: 200 data
+  else refresh token expired or invalid
+    BE-->>AX: error (500 or 401)
+    AX->>AX: localStorage.clear()
+    AX->>P: hard redirect to /login
+  end
+  </pre></div>
+  <p class="caption">Figure 13.2 · Refresh on 401.</p>
+  <p>On the server, <code>AuthService.refresh</code> checks the token's type is "refresh", finds the user, and issues a brand-new pair. An <em>expired</em> refresh token throws inside JJWT before the expiry check in the service is reached, so the response is a 500 rather than the intended 401. The client treats any failure the same way, so the user experience is unaffected.</p>
+  <p>The old refresh token is not invalidated when a new one is issued. Every refresh token stays valid for its full 7 days.</p>
+
+  <h4>13.6 Logging out</h4>
+  <p>Logout is purely client-side: <code>localStorage.clear()</code> and <code>user = null</code>. The server keeps no session and has no token blacklist, so a copied token keeps working until it expires: up to 15 minutes for an access token and up to 7 days for a refresh token.</p>
+</section>
+
+<section class="ch" id="problems">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">14</span>Managing problems</h3>
+
+  <h4>14.1 Creating a problem</h4>
+  <ol class="steps">
+    <li>The admin fills the form. The page checks there is at least one test case and at least one public one, then posts the JSON shown in chapter 9.</li>
+    <li>Security: URL rule 5 requires ADMIN. A normal user gets 403 before any code runs.</li>
+    <li>Validation: title, difficulty and statement are required; every test case needs a non-blank input and expected output.</li>
+    <li><code>ProblemService.create</code> opens a transaction and computes the slug (below). If the slug is taken, it appends <code>-</code> plus the current time in milliseconds modulo 10000, e.g. <code>two-sum-4821</code>.</li>
+    <li>The problem is built with defaults of 2000 ms and 256 MB when limits are absent, and <code>createdBy</code> set to the admin's id.</li>
+    <li>Each tag name is looked up and created if missing.</li>
+    <li>The problem is saved, then each test case is saved with a reference to it. If the list is empty, an <code>ApiException</code> (400) is thrown and the whole transaction rolls back, including the problem row.</li>
+    <li>The response is a <code>ProblemSummary</code>; the page navigates to <code>/problems/{slug}</code>.</li>
+  </ol>
+  <h5>How slugs are made</h5>
+  <p><code>slugify</code> decomposes accented letters (é → e + accent mark), removes every non-ASCII character, lowercases, deletes anything that is not a letter, digit, whitespace or hyphen, trims, and turns runs of whitespace into single hyphens.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Title</th><th>Slug</th></tr></thead>
+    <tbody>
+      <tr><td>Two Sum</td><td><code>two-sum</code></td></tr>
+      <tr><td>Café Orders!</td><td><code>cafe-orders</code></td></tr>
+      <tr><td>A + B</td><td><code>a-b</code></td></tr>
+      <tr><td>Two Sum (second time)</td><td><code>two-sum-second-time</code></td></tr>
+      <tr><td>Two Sum (exact duplicate)</td><td><code>two-sum-4821</code> (number varies)</td></tr>
+      <tr><td>数组求和</td><td>empty string, see case C2</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>14.2 Viewing a problem</h4>
+  <p><code>GET /api/problems/{slug}</code> is public. <code>getBySlug</code> loads the problem, fetches only test cases with <code>is_public = true</code>, and builds a <code>ProblemDetail</code>. Hidden tests are not just hidden in the UI; they never leave the server on this endpoint, because the DTO has no field for them.</p>
+
+  <h4>14.3 Listing problems</h4>
+  <p><code>GET /api/problems</code> takes optional <code>difficulty</code>, <code>page</code> (default 0) and <code>size</code> (default 20). With a difficulty it uses <code>findByDifficulty</code>, otherwise <code>findAll</code>; both are paged. Each problem is mapped to a summary, which reads its tags. Tags are lazily loaded, so this happens after the repository call returns; it works because Spring Boot keeps the database session open for the whole request ("open session in view", chapter 23).</p>
+
+  <h4>14.4 Editing a problem</h4>
+  <ol class="steps">
+    <li>The edit page loads <code>GET /api/problems/{id}/admin</code>. It is protected twice: URL rule 2 and <code>@PreAuthorize</code>.</li>
+    <li>The admin changes fields and saves; the page sends <code>PUT /api/problems/{id}</code> with the complete problem.</li>
+    <li><code>update</code> overwrites title, difficulty, statement and constraints; it changes limits only if provided; it replaces the tag set; it leaves the slug unchanged so existing links keep working.</li>
+    <li>It then deletes <em>all</em> test cases for the problem with one bulk query and inserts the submitted ones as new rows with new ids.</li>
+    <li>The page navigates back to the problem.</li>
+  </ol>
+  <div class="note bad"><p><b class="tag">Limitation</b>Step 4 fails once anyone has submitted to the problem, because their <code>submission_results</code> rows still reference the old test-case ids. Postgres rejects the delete, the transaction rolls back, and the admin sees a 500 error. See case C4.</p></div>
+
+  <h4>14.5 Deleting a problem</h4>
+  <p>The controller counts submissions for the problem. If there are any, the service throws 409 with an explanatory message. Otherwise it bulk-deletes the test cases, then deletes the problem; Hibernate removes the <code>problem_tags</code> links. Tag rows themselves remain.</p>
+</section>
+
+<section class="ch" id="judging">
+  <span class="level developer">Developer</span> <span class="level advanced">Advanced</span>
+  <h3><span class="num">15</span>Submitting and judging</h3>
+  <p>This is the heart of the project. The code lives in <code>SubmissionService</code>, <code>JudgeService</code> and <code>RunnerConfig</code>.</p>
+
+  <h4>15.1 The whole journey</h4>
+  <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  participant UI as ProblemDetail page
+  participant SC as SubmissionController
+  participant SS as SubmissionService
+  participant DB as Postgres
+  participant EX as Async executor
+  participant JS as JudgeService
+  participant DK as Docker daemon
+  participant SP as SubmissionStatus page
+  UI->>SC: POST /api/submissions {problemId, language, sourceCode}
+  SC->>SS: submit(req, user)
+  SS->>DB: insert submission, status PENDING (commits)
+  SS->>EX: judgeAsync(id) queued
+  SS-->>UI: 200 {id, status PENDING}
+  UI->>SP: navigate to /submissions/id
+  loop every 1.5 s until final verdict
+    SP->>SC: GET /api/submissions/id
+    SC-->>SP: current status
+  end
+  EX->>JS: judgeAsync(id) on a worker thread, transaction begins
+  JS->>JS: create workspace, write source file
+  JS->>DK: docker run (compile), C++ and Java only
+  loop each test case
+    JS->>JS: write input.txt
+    JS->>DK: docker run (execute) with input on stdin
+    DK-->>JS: stdout, stderr, exit code
+    JS->>DB: insert submission_result
+  end
+  JS->>DB: update submission (verdict, score, runtime)
+  JS->>DB: upsert user_progress
+  JS->>JS: commit, delete workspace
+  </pre></div>
+  <p class="caption">Figure 15.1 · From the Submit button to a stored verdict. The two halves (polling and judging) run at the same time.</p>
+
+  <h4>15.2 The submit request</h4>
+  <ol class="steps">
+    <li>ProblemDetail checks there is a logged-in user (otherwise it navigates to <code>/login</code>) and posts <code>problemId</code>, <code>language</code> and the editor contents.</li>
+    <li>The URL falls under "anything else", so authentication is required.</li>
+    <li>Validation: <code>problemId</code> and <code>language</code> must be present and <code>sourceCode</code> non-blank. An unknown language string such as <code>"RUST"</code> fails JSON conversion and returns a 500.</li>
+    <li><code>SubmissionService.submit</code> loads the problem (404 if missing), builds a <code>Submission</code> with status PENDING and saves it. The method is <strong>not</strong> transactional, so the save commits immediately. That is essential: the background worker reads the row from a different thread and connection, and would not find it if it were still uncommitted (see 23.2).</li>
+    <li>It calls <code>judgeService.judgeAsync(id)</code>. Because <code>JudgeService</code> is a separate Spring bean, the call goes through a proxy which hands the work to the task executor and returns at once.</li>
+    <li>The response is the PENDING submission with empty results. The frontend navigates to <code>/submissions/{id}</code>.</li>
+  </ol>
+
+  <h4>15.3 Status lifecycle</h4>
+  <div class="diagram"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> PENDING: saved by submit()
+  PENDING --> RUNNING: worker starts (uncommitted, invisible)
+  RUNNING --> COMPILE_ERROR: compiler exit code not 0
+  RUNNING --> ACCEPTED: all tests pass
+  RUNNING --> WRONG_ANSWER: first failure was WA
+  RUNNING --> TIME_LIMIT_EXCEEDED: first failure was TLE
+  RUNNING --> RUNTIME_ERROR: first failure was RE
+  RUNNING --> INTERNAL_ERROR: exception in the judge
+  PENDING --> PENDING: backend restarts mid-judging (stuck)
+  </pre></div>
+  <p class="caption">Figure 15.2 · Submission status. MEMORY_LIMIT_EXCEEDED is never produced.</p>
+  <p>Because the whole of <code>judgeAsync</code> runs in one database transaction, the RUNNING status is written but not committed until judging ends, by which time it has been overwritten with the verdict. Pollers therefore see PENDING followed directly by the final verdict.</p>
+
+  <h4>15.4 Preparing the workspace</h4>
+  <p>The worker creates <code>{judge.workspace-dir}/sub-{id}</code>, which is <code>/tmp/judge-workspace/sub-31</code> under compose. It sets the folder's permissions to <code>rwxrwxrwx</code>, because the runner containers run as user 10001 while the backend runs as root, and the compiler must be able to write its output file into the folder. On a non-POSIX file system (Windows) that call is skipped.</p>
+  <p><code>RunnerConfig.forLanguage</code> supplies the per-language details:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Language</th><th>Image</th><th>Source file</th><th>Compile command</th><th>Run command</th></tr></thead>
+    <tbody>
+      <tr><td>CPP</td><td><code>judge-runner-cpp</code></td><td><code>solution.cpp</code></td><td><code>g++ -O2 -o sol solution.cpp</code></td><td><code>./sol</code></td></tr>
+      <tr><td>PYTHON</td><td><code>judge-runner-python</code></td><td><code>solution.py</code></td><td>none</td><td><code>python3 solution.py</code></td></tr>
+      <tr><td>JAVA</td><td><code>judge-runner-java</code></td><td><code>Main.java</code></td><td><code>javac Main.java</code></td><td><code>java -cp . Main</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>The source code is written into the folder as UTF-8. Note the C++ flags: no <code>-std=</code> flag (GCC 13 defaults to C++17) and no extra warnings.</p>
+
+  <h4>15.5 Anatomy of one sandbox run</h4>
+  <p>Every compile and every test uses the same <code>docker run</code> template, assembled in <code>runDocker</code>:</p>
+  <pre class="code"><code>docker run --rm -i \
+  --network=none \
+  --memory=256m --memory-swap=256m \
+  --cpus=1 \
+  --pids-limit=64 \
+  --read-only \
+  --tmpfs /tmp:rw,size=32m \
+  -v /tmp/judge-workspace/sub-31:/box:rw \
+  -w /box \
+  judge-runner-cpp \
+  ./sol</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Flag</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>--rm</code></td><td>Delete the container when its process exits.</td></tr>
+      <tr><td><code>-i</code></td><td>Keep standard input open, so the judge can pipe the test input in.</td></tr>
+      <tr><td><code>--network=none</code></td><td>No network interface except loopback.</td></tr>
+      <tr><td><code>--memory=256m --memory-swap=256m</code></td><td>256 MB RAM and no extra swap. Exceeding it gets the process killed by the kernel.</td></tr>
+      <tr><td><code>--cpus=1</code></td><td>At most one CPU core's worth of time.</td></tr>
+      <tr><td><code>--pids-limit=64</code></td><td>At most 64 processes and threads. Stops fork bombs.</td></tr>
+      <tr><td><code>--read-only</code></td><td>The container's own file system cannot be modified.</td></tr>
+      <tr><td><code>--tmpfs /tmp:rw,size=32m</code></td><td>A 32 MB in-memory scratch <code>/tmp</code>, needed by compilers and the JVM.</td></tr>
+      <tr><td><code>-v ...:/box:rw</code></td><td>The submission's workspace, writable, mounted at <code>/box</code>.</td></tr>
+      <tr><td><code>-w /box</code></td><td>Start in <code>/box</code>, so <code>./sol</code> and <code>solution.py</code> resolve.</td></tr>
+    </tbody>
+  </table></div>
+  <p>The Java process starts <code>docker</code> with <code>ProcessBuilder</code>. For a test run it copies <code>input.txt</code> into the process's standard input and closes it; for a compile it closes standard input immediately. It then waits up to the timeout, and after the process exits it reads all of standard output and standard error. The elapsed time is measured around the wait, so it includes Docker's container start-up and tear-down: typically several hundred milliseconds even for a program that does nothing.</p>
+
+  <h4>15.6 The compile step</h4>
+  <p>For C++ and Java, one container runs the compile command with a fixed 20-second timeout. If the exit code is not 0 (including a timeout, which is reported as exit code −1), the submission becomes <span class="v bad">COMPILE_ERROR</span>, the first 4,000 characters of the compiler's error output are saved as <code>errorMessage</code>, <code>judgedAt</code> is set, and the method returns. No test results are written and <code>user_progress</code> is not touched, so compile errors do not count as attempts. The compiled <code>sol</code> or <code>Main.class</code> stays in the workspace for the test runs.</p>
+
+  <h4>15.7 Running each test</h4>
+  <p>The test cases are loaded with <code>findByProblemId</code> (hidden and public together, in database order, normally by id). For each one:</p>
+  <ol class="steps">
+    <li>The test's input is written to <code>input.txt</code>, overwriting the previous one.</li>
+    <li>The timeout is computed as <code>ceil(max(1, timeLimitMs / 1000)) + 2</code> seconds.</li>
+    <li>The run command executes in a fresh container with the input piped in.</li>
+    <li>The verdict is decided (figure 15.3).</li>
+    <li>A <code>submission_results</code> row is saved with the verdict and wall-clock time.</li>
+    <li>If this is the first non-accepted test, its verdict becomes the overall verdict.</li>
+  </ol>
+  <p>All tests run even after a failure. That gives a complete per-test table and an accurate score, at the cost of judging time, which matters most when every test times out (case A4).</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A["docker run returned within the timeout?"] -->|"no"| T["TIME_LIMIT_EXCEEDED"]
+  A -->|"yes"| B["exit code is 0?"]
+  B -->|"no"| R["RUNTIME_ERROR"]
+  B -->|"yes"| C["normalized output equals normalized expected output?"]
+  C -->|"yes"| OK["ACCEPTED"]
+  C -->|"no"| W["WRONG_ANSWER"]
+  </pre></div>
+  <p class="caption">Figure 15.3 · Per-test verdict.</p>
+
+  <h5>Effective time limits</h5>
+  <p>The timeout applies to the whole <code>docker run</code>, container start-up included, and adds two seconds of slack. The limit a solution actually faces is therefore much looser than the number on the problem page:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Problem's time limit</th><th>Judge's wall-clock timeout</th></tr></thead>
+    <tbody>
+      <tr><td>500 ms</td><td>3 s</td></tr>
+      <tr><td>1,000 ms</td><td>3 s</td></tr>
+      <tr><td>2,000 ms (default)</td><td>4 s</td></tr>
+      <tr><td>2,500 ms</td><td>5 s</td></tr>
+      <tr><td>5,000 ms</td><td>7 s</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>15.8 Comparing output</h4>
+  <p>Both the program's output and the expected output pass through the same <code>normalize</code> function before an exact string comparison:</p>
+  <ol>
+    <li><code>strip()</code>: remove all leading and trailing whitespace of the whole text, including blank lines.</li>
+    <li>Remove spaces and tabs that sit immediately before a <code>\n</code>.</li>
+    <li>Replace Windows line endings <code>\r\n</code> with <code>\n</code>.</li>
+  </ol>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Program printed</th><th>Expected</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td><code>7\n</code></td><td><code>7</code></td><td><span class="v ok">match</span></td></tr>
+      <tr><td><code>\n\n7   \n\n</code></td><td><code>7</code></td><td><span class="v ok">match</span></td></tr>
+      <tr><td><code>1 2 3 \n4 5 6 \n</code></td><td><code>1 2 3\n4 5 6</code></td><td><span class="v ok">match</span></td></tr>
+      <tr><td><code>1\r\n2\r\n</code></td><td><code>1\n2</code></td><td><span class="v ok">match</span></td></tr>
+      <tr><td><code>abc \r\ndef</code></td><td><code>abc\ndef</code></td><td><span class="v bad">no match</span> (tested: step 2 runs before step 3)</td></tr>
+      <tr><td><code>1  2</code> (two spaces)</td><td><code>1 2</code></td><td><span class="v bad">no match</span></td></tr>
+      <tr><td><code>0.30000000000000004</code></td><td><code>0.3</code></td><td><span class="v bad">no match</span> (no tolerance for decimals)</td></tr>
+      <tr><td><code>YES</code></td><td><code>yes</code></td><td><span class="v bad">no match</span> (case-sensitive)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Problems that accept several correct answers (any valid path, any order) cannot be judged correctly, because there is no custom checker mechanism.</p>
+
+  <h4>15.9 Finishing up</h4>
+  <ol class="steps">
+    <li>Score = <code>round(100 × passed ÷ total)</code>. Two of three tests passing gives 67. Test weights are ignored.</li>
+    <li>The submission gets its final status, score, the maximum runtime across tests, and <code>judgedAt</code>.</li>
+    <li><code>updateProgress</code> finds or creates the user's <code>user_progress</code> row for this problem, adds one to <code>attempts</code>, and, if the verdict is ACCEPTED and the problem was not solved before, sets <code>solved = true</code> and records this submission's id.</li>
+    <li>The transaction commits. At this instant the verdict, every result row and the progress update become visible together.</li>
+    <li>The <code>finally</code> block deletes the workspace folder, whatever happened.</li>
+  </ol>
+  <p>If any exception escapes during judging (for example the <code>docker</code> program does not exist), the catch block marks the submission <span class="v warn">INTERNAL_ERROR</span> with the exception message and saves it.</p>
+
+  <h4>15.10 Showing the result</h4>
+  <p><code>SubmissionStatus</code> fetches the submission once immediately and then every 1.5 seconds. <code>getById</code> returns 403 unless the requester owns the submission or is an admin. When the status is one of the seven final values, polling stops. The page shows the verdict badge, the score, the runtime, the compiler message (if any) and the per-test table. Only compile errors and internal errors carry a message; a program's own error output (for example a Python traceback) is written to the server log and never shown to the user.</p>
+</section>
+
+<section class="ch" id="leaderboard">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">16</span>The leaderboard</h3>
+  <ol class="steps">
+    <li><code>GET /api/leaderboard?limit=50</code> is public.</li>
+    <li><code>LeaderboardService.top</code> loads <strong>every</strong> user.</li>
+    <li>For each user it runs one count query: how many <code>user_progress</code> rows have <code>solved = true</code>.</li>
+    <li>Users with zero solved problems are dropped, the rest sorted by count descending, and the first <code>limit</code> returned.</li>
+  </ol>
+  <p>With N users this makes N + 1 queries per page view. That is fine for hundreds of users and slow for tens of thousands. The README and code comments point to the intended upgrade: a Redis sorted set updated on each first accept, read with one command. Users with equal counts appear in an unspecified order; there is no tie-breaker such as "solved first".</p>
+</section>
+
+<!-- ============ PART IV ============ -->
+<div class="part-head">
+  <div class="eyebrow">Part IV</div>
+  <h2>Specific cases</h2>
+  <p>Concrete situations, what the system does in each, and what the user sees. Every case was worked out from the code; the ones marked "tested" were also reproduced. Case ids are used elsewhere in the handbook.</p>
+</div>
+
+<section class="ch" id="cases-judge">
+  <span class="level everyone">Everyone</span> <span class="level developer">Developer</span>
+  <h3><span class="num">17</span>Judging cases</h3>
+  <div class="cases">
+
+    <article class="case"><header><span class="id">A1</span><h5>A correct C++ solution</h5><span class="v ok">ACCEPTED</span></header><dl>
+      <dt>Situation</dt><dd><p>Problem "Sum of Two" with 1 public and 2 hidden tests. The user submits a correct program.</p></dd>
+      <dt>What happens</dt><dd><p>One compile container runs <code>g++</code> and exits 0. Three test containers run <code>./sol</code>, each printing the right sum. Three ACCEPTED result rows are written, score 100, runtime is the slowest test (typically 400–900 ms, mostly Docker start-up). <code>user_progress</code> is created with attempts 1 and solved true.</p></dd>
+      <dt>User sees</dt><dd><p>PENDING for a few seconds, then ACCEPTED, Score 100%, and three rows: Sample 1, Hidden 2, Hidden 3. Their leaderboard count goes up by one. A second accepted submission later does not raise it again.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A2</span><h5>Passes the samples, fails a hidden test</h5><span class="v bad">WRONG_ANSWER</span></header><dl>
+      <dt>Situation</dt><dd><p>The solution uses <code>int</code>, and a hidden test sums two numbers near 2 billion, which overflows.</p></dd>
+      <dt>What happens</dt><dd><p>Test 1 accepted, test 2 prints a negative number and is marked WRONG_ANSWER, test 3 still runs and passes. Overall verdict is the first failure: WRONG_ANSWER. Score round(200/3) = 67.</p></dd>
+      <dt>User sees</dt><dd><p>WRONG_ANSWER, 67%, with "Hidden 2" in red. They do not see the hidden input or their output for it; that is deliberate.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A3</span><h5>Code that does not compile</h5><span class="v bad">COMPILE_ERROR</span></header><dl>
+      <dt>Situation</dt><dd><p>A missing semicolon in C++, or a type error in Java.</p></dd>
+      <dt>What happens</dt><dd><p>The compile container exits non-zero. The compiler's message (up to 4,000 characters) is saved. No tests run, no result rows, and the attempt is not counted in <code>user_progress</code>.</p></dd>
+      <dt>User sees</dt><dd><p>COMPILE_ERROR, 0%, and the compiler output in a red box, e.g. <code>solution.cpp:5:14: error: expected ';' before 'return'</code>.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A4</span><h5>An infinite loop</h5><span class="v bad">TIME_LIMIT_EXCEEDED</span></header><dl>
+      <dt>Situation</dt><dd><p><code>while (true) {}</code> on a problem with 10 tests and the default 2,000 ms limit.</p></dd>
+      <dt>What happens</dt><dd><p>Each test waits the full 4-second timeout, then the judge kills the local <code>docker</code> client process and records TLE. All 10 tests do this, so judging takes about 40 seconds. Killing the client does <strong>not</strong> stop the container: the daemon keeps it running, and since the loop never ends, <code>--rm</code> never fires. Ten containers are left spinning, each using up to a full CPU core, until someone runs <code>docker kill</code> or restarts Docker.</p></dd>
+      <dt>User sees</dt><dd><p>TIME_LIMIT_EXCEEDED after roughly 40 seconds of PENDING. Over time, every user sees slower judging and eventually spurious TLEs as leaked containers pile up. This is the most serious known issue (chapter 29).</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A5</span><h5>A crash</h5><span class="v bad">RUNTIME_ERROR</span></header><dl>
+      <dt>Situation</dt><dd><p>C++ reads past an array (segmentation fault, exit code 139), Python raises an uncaught exception (exit code 1), or Java throws (exit code 1).</p></dd>
+      <dt>What happens</dt><dd><p>The run finishes in time with a non-zero exit code: RUNTIME_ERROR. The judge logs the exit code and the first 500 characters of standard error at WARN level on the server.</p></dd>
+      <dt>User sees</dt><dd><p>RUNTIME_ERROR with no explanation. The traceback is in the server log only. Hiding it prevents a solver from printing hidden test data through error messages, but also makes debugging harder.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A6</span><h5>Using too much memory</h5><span class="v bad">RUNTIME_ERROR</span></header><dl>
+      <dt>Situation</dt><dd><p>A program allocates and fills a 1 GB array on a problem whose page says "256 MB".</p></dd>
+      <dt>What happens</dt><dd><p>The container's 256 MB cap is hit. In C++ the kernel's out-of-memory killer ends the process with SIGKILL (exit code 137); in Java the JVM throws <code>OutOfMemoryError</code> and exits 1; in Python the process is either killed the same way or raises <code>MemoryError</code> and exits 1. All of these are non-zero exits: RUNTIME_ERROR. The problem's own <code>memoryLimitMb</code> is never used, so a problem set to 64 MB or 1,024 MB is still judged at 256 MB.</p></dd>
+      <dt>User sees</dt><dd><p>RUNTIME_ERROR, never MEMORY_LIMIT_EXCEEDED.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A7</span><h5>Printing a lot of output</h5><span class="v bad">TIME_LIMIT_EXCEEDED (wrongly)</span></header><dl>
+      <dt>Situation</dt><dd><p>A correct solution prints 200,000 numbers (about 1 MB).</p></dd>
+      <dt>What happens</dt><dd><p>The judge waits for the process to finish <em>before</em> reading its output. Operating-system pipes hold roughly 64 KB; once full, the program blocks waiting for someone to read, and nobody does. The wait times out and the test is marked TLE, even though the program was correct and fast. The container is also leaked, as in A4.</p></dd>
+      <dt>User sees</dt><dd><p>TIME_LIMIT_EXCEEDED on a correct solution. Problems with large outputs cannot currently be judged.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A8</span><h5>Whitespace differences</h5><span class="v ok">usually ACCEPTED</span></header><dl>
+      <dt>Situation</dt><dd><p>The program prints a trailing space after each number, an extra newline at the end, or Windows line endings.</p></dd>
+      <dt>What happens</dt><dd><p>Normalization (15.8) removes these differences, so the answer is accepted. One combination slips through: a space immediately before a Windows line ending (<code>"abc \r\n"</code>) is not removed, and the answer is judged wrong. This was tested directly.</p></dd>
+      <dt>User sees</dt><dd><p>ACCEPTED in nearly all cases. Programs running in the Linux sandbox print <code>\n</code>, so the edge case requires deliberately printing <code>\r\n</code>.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A9</span><h5>Java with a different class name</h5><span class="v bad">COMPILE_ERROR or RUNTIME_ERROR</span></header><dl>
+      <dt>Situation</dt><dd><p>The user writes <code>public class Solution</code> as on other sites.</p></dd>
+      <dt>What happens</dt><dd><p>The file is always saved as <code>Main.java</code>. A public class must match its file name, so <code>javac</code> fails: COMPILE_ERROR ("class Solution is public, should be declared in a file named Solution.java"). If the class is not public, it compiles to <code>Solution.class</code>, but <code>java -cp . Main</code> cannot find <code>Main</code>: every test is RUNTIME_ERROR.</p></dd>
+      <dt>User sees</dt><dd><p>A compiler message in the first variant; an unexplained RUNTIME_ERROR in the second. The editor's Java template uses <code>public class Main</code>, which avoids both.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A10</span><h5>Reading more input than exists</h5><span class="v bad">RUNTIME_ERROR or WRONG_ANSWER</span></header><dl>
+      <dt>Situation</dt><dd><p>A Python solution calls <code>input()</code> three times, but the test has two lines.</p></dd>
+      <dt>What happens</dt><dd><p>Standard input is closed after the test data, so the third call gets end-of-file and raises <code>EOFError</code> (exit 1): RUNTIME_ERROR. In C++, <code>cin &gt;&gt; x</code> at end-of-file just fails silently and leaves <code>x</code> unchanged, which usually produces WRONG_ANSWER. Nothing hangs, because the input stream is always closed.</p></dd>
+      <dt>User sees</dt><dd><p>RUNTIME_ERROR (Python, Java) or WRONG_ANSWER (C++).</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A11</span><h5>Trying to reach the network</h5><span class="v bad">RUNTIME_ERROR</span></header><dl>
+      <dt>Situation</dt><dd><p>A submission tries to download something or send hidden test data to an outside server.</p></dd>
+      <dt>What happens</dt><dd><p><code>--network=none</code> gives the container only a loopback interface. DNS lookups and connections fail immediately; an uncaught error exits non-zero.</p></dd>
+      <dt>User sees</dt><dd><p>RUNTIME_ERROR. Nothing leaves the machine.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A12</span><h5>A fork bomb</h5><span class="v bad">RUNTIME_ERROR or TIME_LIMIT_EXCEEDED</span></header><dl>
+      <dt>Situation</dt><dd><p>A program that creates processes endlessly.</p></dd>
+      <dt>What happens</dt><dd><p><code>--pids-limit=64</code> makes the 65th process creation fail. Depending on how the program handles that failure, it crashes (RE) or keeps retrying until the timeout (TLE, with a leaked container as in A4). The host is not affected beyond one CPU core.</p></dd>
+      <dt>User sees</dt><dd><p>RUNTIME_ERROR or TIME_LIMIT_EXCEEDED.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A13</span><h5>Writing a huge file</h5><span class="v na">varies</span></header><dl>
+      <dt>Situation</dt><dd><p>A program writes gigabytes into its working directory.</p></dd>
+      <dt>What happens</dt><dd><p>The root file system is read-only and <code>/tmp</code> is capped at 32 MB, but <code>/box</code> is a normal folder on the host with no size limit. Within the 3–7 second timeout a fast program can write several gigabytes to the host's disk. The folder is deleted when judging ends, so the space comes back; but several such submissions at once could fill the disk and disrupt Postgres.</p></dd>
+      <dt>User sees</dt><dd><p>Probably TIME_LIMIT_EXCEEDED or WRONG_ANSWER. The real effect is on the server.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A14</span><h5>A slow compile</h5><span class="v bad">COMPILE_ERROR</span></header><dl>
+      <dt>Situation</dt><dd><p>Heavy C++ template code takes longer than 20 seconds to compile, or the 256 MB memory cap stops the compiler.</p></dd>
+      <dt>What happens</dt><dd><p>A timeout is reported as exit code −1 with the message "timed out". Any non-zero exit is a compile error.</p></dd>
+      <dt>User sees</dt><dd><p>COMPILE_ERROR with "timed out" or a compiler crash message.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A15</span><h5>A problem with no input</h5><span class="v na">cannot be created as written</span></header><dl>
+      <dt>Situation</dt><dd><p>An admin wants a "print Hello, World" problem with empty input.</p></dd>
+      <dt>What happens</dt><dd><p>Test case input is <code>@NotBlank</code> on the server and <code>required</code> in the form, so an empty input is rejected. The workaround is a dummy input line that the solution ignores. The same rule forbids an empty expected output.</p></dd>
+      <dt>User sees</dt><dd><p>The admin form refuses to submit.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">A16</span><h5>Several submissions at once</h5><span class="v na">queued</span></header><dl>
+      <dt>Situation</dt><dd><p>Twenty people submit in the same second.</p></dd>
+      <dt>What happens</dt><dd><p>Each gets its own submission id and workspace folder, so they cannot interfere. The executor has 8 worker threads: 8 submissions are judged in parallel and 12 wait in the queue as PENDING. Each worker holds one of the 10 database connections for its whole judging time, leaving only 2 for all web requests while 8 judges are busy.</p></dd>
+      <dt>User sees</dt><dd><p>Longer PENDING times under load, and potentially slow page loads when judging is saturated.</p></dd>
+    </dl></article>
+  </div>
+</section>
+
+<section class="ch" id="cases-auth">
+  <span class="level everyone">Everyone</span> <span class="level developer">Developer</span>
+  <h3><span class="num">18</span>Account and access cases</h3>
+  <div class="cases">
+
+    <article class="case"><header><span class="id">B1</span><h5>Registering an email that already exists</h5><span class="v bad">409</span></header><dl>
+      <dt>What happens</dt><dd><p><code>existsByEmail</code> is true; the service throws 409 "Email already registered".</p></dd>
+      <dt>User sees</dt><dd><p>"Email already registered" under the form.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B2</span><h5>The same email in different capitals</h5><span class="v warn">allowed</span></header><dl>
+      <dt>What happens</dt><dd><p>"Ada@Example.com" and "ada@example.com" are different strings, so both registrations succeed and create two accounts. Logging in must use the exact capitalisation registered.</p></dd>
+      <dt>User sees</dt><dd><p>Two separate accounts, or a login failure if they type the email differently.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B3</span><h5>Two users with the same username</h5><span class="v warn">allowed</span></header><dl>
+      <dt>What happens</dt><dd><p>Username has no unique constraint. Both accounts exist.</p></dd>
+      <dt>User sees</dt><dd><p>Two identical names on the leaderboard with no way to tell them apart.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B4</span><h5>A username that is too short</h5><span class="v bad">400</span></header><dl>
+      <dt>What happens</dt><dd><p>The server returns <code>{"username": "size must be between 3 and 30"}</code>. The Register page looks for an <code>error</code> key, finds none, and falls back to its generic text.</p></dd>
+      <dt>User sees</dt><dd><p>"Registration failed", with no hint about the username rule. (The password minimum is enforced in the browser too, so that one is caught earlier.)</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B5</span><h5>Wrong password or unknown email</h5><span class="v bad">500</span></header><dl>
+      <dt>What happens</dt><dd><p>The authentication manager throws <code>BadCredentialsException</code>, which the catch-all handler turns into a 500.</p></dd>
+      <dt>User sees</dt><dd><p>"Internal server error: Bad credentials". Functionally correct, but it looks like a crash.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B6</span><h5>Access token expires during use</h5><span class="v ok">transparent</span></header><dl>
+      <dt>Situation</dt><dd><p>A user has had a problem open for 20 minutes and presses Submit.</p></dd>
+      <dt>What happens</dt><dd><p>The filter ignores the expired token, the endpoint answers 401, the Axios interceptor exchanges the refresh token for a new pair and replays the submit.</p></dd>
+      <dt>User sees</dt><dd><p>Nothing unusual; the submission goes through. If several requests fail at the same moment, each performs its own refresh. That works, because old refresh tokens stay valid.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B7</span><h5>Returning after more than 7 days</h5><span class="v na">logged out</span></header><dl>
+      <dt>What happens</dt><dd><p>The page still shows the username (it comes from <code>localStorage</code>). The first protected call returns 401; the refresh call fails because the refresh token has expired; the interceptor clears storage and redirects to <code>/login</code>. Public pages (problem list, problem view, leaderboard) keep working, since they do not need a token.</p></dd>
+      <dt>User sees</dt><dd><p>They appear logged in until they do something that needs an account, then they land on the login page.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B8</span><h5>Promoting a user to admin</h5><span class="v na">needs a re-login in the UI</span></header><dl>
+      <dt>What happens</dt><dd><p>An operator runs <code>UPDATE users SET role='ADMIN' WHERE email='...'</code>. The backend reads the role from the database on every request, so admin API calls work immediately. The frontend's copy of the role in <code>localStorage</code> still says USER.</p></dd>
+      <dt>User sees</dt><dd><p>No admin buttons until they log out and back in.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B9</span><h5>Demoting or deleting a user who is logged in</h5><span class="v na">immediate</span></header><dl>
+      <dt>What happens</dt><dd><p>A demoted admin's next admin call gets 403, because the filter loads the current role. A deleted user's token no longer finds a user, so the request is unauthenticated (401); the refresh also fails ("User not found"), and they are sent to the login page.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B10</span><h5>Opening someone else's submission</h5><span class="v bad">403</span></header><dl>
+      <dt>Situation</dt><dd><p>A user changes the URL from <code>/submissions/31</code> to <code>/submissions/30</code>.</p></dd>
+      <dt>What happens</dt><dd><p><code>getById</code> compares the owner's id with the requester's and throws 403 unless the requester is an admin.</p></dd>
+      <dt>User sees</dt><dd><p>"Not authorized to view this submission". Admins can view any submission.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B11</span><h5>A normal user tries admin actions</h5><span class="v bad">blocked</span></header><dl>
+      <dt>What happens</dt><dd><p>Visiting <code>/admin/new-problem</code> redirects to the home page. Calling <code>POST /api/problems</code> directly (with curl, or after editing <code>localStorage</code> to say ADMIN) is stopped by the URL rule with 403.</p></dd>
+      <dt>User sees</dt><dd><p>A redirect, or "You don't have permission to do that".</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">B12</span><h5>Pressing Submit while logged out</h5><span class="v na">code lost</span></header><dl>
+      <dt>What happens</dt><dd><p>ProblemDetail navigates to <code>/login</code>. The editor content lives only in that page's state, which is discarded.</p></dd>
+      <dt>User sees</dt><dd><p>After logging in they land on the home page, and the code they typed is gone.</p></dd>
+    </dl></article>
+  </div>
+</section>
+
+<section class="ch" id="cases-problem">
+  <span class="level everyone">Everyone</span> <span class="level developer">Developer</span>
+  <h3><span class="num">19</span>Problem management cases</h3>
+  <div class="cases">
+
+    <article class="case"><header><span class="id">C1</span><h5>Two problems with the same title</h5><span class="v ok">works</span></header><dl>
+      <dt>What happens</dt><dd><p>The second gets a numeric suffix, e.g. <code>two-sum-4821</code>. The suffix comes from the clock, so in the rare case it repeats an existing slug, the unique constraint rejects the insert with a 500.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">C2</span><h5>A title with no Latin letters</h5><span class="v bad">unreachable problem</span></header><dl>
+      <dt>Situation</dt><dd><p>Title "数组求和" or "😀😀".</p></dd>
+      <dt>What happens</dt><dd><p>Slugify removes every character, producing an empty slug. The problem is saved, and its link is <code>/problems/</code>, which matches no frontend route. A second such problem gets the slug <code>-1234</code>.</p></dd>
+      <dt>User sees</dt><dd><p>The problem appears in the list but its link leads to a blank page.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">C3</span><h5>Editing a problem nobody has attempted</h5><span class="v ok">works</span></header><dl>
+      <dt>What happens</dt><dd><p>Fields and tags are replaced. All test cases are deleted and re-inserted with new ids. The slug stays the same even if the title changes.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">C4</span><h5>Editing a problem that has submissions</h5><span class="v bad">500</span></header><dl>
+      <dt>What happens</dt><dd><p>The bulk delete of test cases violates the foreign key from <code>submission_results</code>. Postgres rejects it, the transaction rolls back (nothing changes, not even the title), and the generic handler returns "Internal server error: could not execute statement ...".</p></dd>
+      <dt>User sees</dt><dd><p>The edit form shows the error. A typo in a test case can no longer be fixed through the UI after the first submission. This is one of the two most important known issues.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">C5</span><h5>Deleting a problem</h5><span class="v na">depends</span></header><dl>
+      <dt>What happens</dt><dd><p>With submissions: 409, "Cannot delete a problem that already has submissions (N). ...". Without: test cases and the problem are removed, and the page returns to the list.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">C6</span><h5>More than 20 problems</h5><span class="v warn">partly hidden</span></header><dl>
+      <dt>What happens</dt><dd><p>The list page always requests page 0 with the default size of 20 and has no paging controls. Problem 21 onwards are reachable only by typing their URL.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">C7</span><h5>A problem with no public tests</h5><span class="v na">allowed by the API</span></header><dl>
+      <dt>What happens</dt><dd><p>The admin form insists on at least one public test, but the API does not. A problem created through the API with only hidden tests shows a "Sample tests" heading with nothing under it.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">C8</span><h5>Changing language in the editor</h5><span class="v warn">code replaced</span></header><dl>
+      <dt>What happens</dt><dd><p>Switching from C++ to Python replaces the editor contents with the Python template, without asking.</p></dd>
+      <dt>User sees</dt><dd><p>Their code disappears. Switching back does not restore it.</p></dd>
+    </dl></article>
+  </div>
+</section>
+
+<section class="ch" id="cases-infra">
+  <span class="level developer">Developer</span> <span class="level advanced">Advanced</span>
+  <h3><span class="num">20</span>Infrastructure cases</h3>
+  <div class="cases">
+
+    <article class="case"><header><span class="id">D1</span><h5>Runner images were never built</h5><span class="v bad">misleading verdicts</span></header><dl>
+      <dt>What happens</dt><dd><p><code>docker run judge-runner-cpp</code> finds no local image and tries to pull it from Docker Hub, which fails. <code>docker</code> exits with code 125. For C++ and Java this happens in the compile step, so the user gets COMPILE_ERROR with Docker's message ("Unable to find image 'judge-runner-cpp:latest' locally ... pull access denied"). Python has no compile step, so every test becomes RUNTIME_ERROR with nothing shown.</p></dd>
+      <dt>Fix</dt><dd><p>Build the three images (chapter 25). This is the most likely first-run problem.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">D2</span><h5>Docker is not reachable from the backend</h5><span class="v bad">misleading verdicts</span></header><dl>
+      <dt>What happens</dt><dd><p>If the socket is not mounted or Docker Desktop is stopped, the <code>docker</code> client exits non-zero with "Cannot connect to the Docker daemon". Results look exactly like D1. If the <code>docker</code> program is missing altogether (backend run outside the container without Docker installed), <code>ProcessBuilder</code> throws and the submission becomes INTERNAL_ERROR with the exception message.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">D3</span><h5>The backend restarts while judging</h5><span class="v bad">stuck forever</span></header><dl>
+      <dt>What happens</dt><dd><p>The in-memory executor queue and the open transaction are lost. The transaction rolls back, so the submission is still PENDING in the database. Nothing ever picks it up again; there is no recovery scan at start-up. Containers that were running finish on their own (or leak, if looping).</p></dd>
+      <dt>User sees</dt><dd><p>A submission page that polls PENDING forever.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">D4</span><h5>Docker Engine 29 and the backend's Docker client</h5><span class="v warn">unverified risk</span></header><dl>
+      <dt>What happens</dt><dd><p>The backend image installs Ubuntu 22.04's <code>docker.io</code> client package. Docker Engine 29 refuses clients that use an API version older than 1.44. If the Ubuntu package is older than that, every <code>docker run</code> from the backend fails with "client version ... is too old", producing the symptoms of D1. This could not be checked because Docker Desktop was not running when the handbook was written.</p></dd>
+      <dt>Fix</dt><dd><p>Install <code>docker-ce-cli</code> from Docker's own apt repository in the backend Dockerfile.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">D5</span><h5>Compiling the backend locally on JDK 23 or newer</h5><span class="v bad">build fails (tested)</span></header><dl>
+      <dt>What happens</dt><dd><p>From JDK 23, <code>javac</code> no longer runs annotation processors found on the classpath unless told to. Lombok never runs, so about 100 "cannot find symbol" errors appear (<code>getId()</code>, <code>builder()</code>, <code>log</code>). The Docker build is unaffected because it uses JDK 17. With processing enabled the project compiles cleanly.</p></dd>
+      <dt>Fix</dt><dd><p>See 25.3.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">D6</span><h5>No internet connection in the browser</h5><span class="v warn">editor missing</span></header><dl>
+      <dt>What happens</dt><dd><p><code>@monaco-editor/react</code> downloads the Monaco editor from the jsDelivr CDN when the page first needs it. Offline, or behind a firewall that blocks the CDN, the editor area shows "Loading..." indefinitely.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">D7</span><h5>Many people watching submissions</h5><span class="v na">load</span></header><dl>
+      <dt>What happens</dt><dd><p>Each open submission page makes one request every 1.5 seconds until a verdict arrives; each request runs the JWT filter (one user query) and the submission query. A hundred people waiting on a slow queue generate about 67 requests and well over 130 database queries per second. Fine for a demo; it is the reason the README mentions Server-Sent Events.</p></dd>
+    </dl></article>
+
+    <article class="case"><header><span class="id">D8</span><h5>Postgres data across restarts</h5><span class="v ok">kept</span></header><dl>
+      <dt>What happens</dt><dd><p>Data lives in the named volume <code>pgdata</code>, so <code>docker compose down</code> and <code>up</code> keep it. <code>docker compose down -v</code> deletes the volume and therefore all users, problems and submissions.</p></dd>
+    </dl></article>
+  </div>
+</section>
+
+<!-- ============ PART V ============ -->
+<div class="part-head">
+  <div class="eyebrow">Part V</div>
+  <h2>Deep dives</h2>
+  <p>Security, the sandbox, concurrency and the framework details that explain the less obvious behaviour.</p>
+</div>
+
+<section class="ch" id="security">
+  <span class="level advanced">Advanced</span>
+  <h3><span class="num">21</span>Security model</h3>
+
+  <h4>21.1 What is being protected, and from whom</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Asset</th><th>Threat</th><th>Main control</th></tr></thead>
+    <tbody>
+      <tr><td>The host machine</td><td>Malicious submitted code</td><td>Docker sandbox (chapter 22)</td></tr>
+      <tr><td>Hidden test data</td><td>Solvers who want to cheat</td><td>DTOs without hidden fields; runtime errors not echoed; no network in sandbox</td></tr>
+      <tr><td>User accounts</td><td>Password theft, impersonation</td><td>BCrypt hashes; signed short-lived tokens</td></tr>
+      <tr><td>Problem integrity</td><td>Non-admins editing problems</td><td>URL rules plus method rules on the server</td></tr>
+      <tr><td>Other users' code</td><td>Reading someone else's submission</td><td>Ownership check in <code>getById</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>21.2 Stateless authentication</h4>
+  <p>The server keeps no sessions (<code>SessionCreationPolicy.STATELESS</code>). Every request proves its identity with an access token, and the server can verify that token using only the secret key. The benefits are simplicity and horizontal scaling: any number of backend instances can verify any token. The costs are revocation (a token cannot be cancelled before it expires) and the need for a refresh mechanism so short access lifetimes do not force constant logins. This project accepts both costs and does not add a blacklist.</p>
+
+  <h4>21.3 Why anonymous authentication is disabled</h4>
+  <p>Spring Security normally gives unauthenticated requests an "anonymous" identity. Access to a protected URL by an anonymous identity is treated as <em>access denied</em> and, combined with a custom access-denied handler, would come back as 403. The frontend only refreshes tokens on 401. Disabling anonymous authentication (<code>.anonymous(anon -&gt; anon.disable())</code>) makes a missing or expired token produce "no authentication at all", which goes to the entry point and yields a 401. Public URLs still work because <code>permitAll()</code> grants access without ever looking at the authentication. The comment in <code>SecurityConfig</code> documents this reasoning.</p>
+
+  <h4>21.4 Two layers of authorization</h4>
+  <p>Admin endpoints are protected by URL rules in <code>SecurityConfig</code>. Two of them (<code>getForAdmin</code> and <code>delete</code>) are additionally annotated with <code>@PreAuthorize</code>. <code>create</code> and <code>update</code> rely on the URL rule alone. That is sufficient today, but if someone later moves or renames those routes, the URL rule could stop matching and the endpoints would silently become available to every logged-in user. Adding <code>@PreAuthorize</code> to all four admin methods would make protection independent of the URL layout.</p>
+
+  <h4>21.5 Token storage in the browser</h4>
+  <p>Tokens live in <code>localStorage</code>, readable by any JavaScript on the page. If an attacker could inject script (cross-site scripting), they could steal the tokens. The current UI resists that: React escapes all text it renders, problem statements are displayed as plain text (<code>white-space: pre-wrap</code>), and there is no <code>dangerouslySetInnerHTML</code> anywhere. If problem statements are ever rendered as Markdown or HTML, they must be sanitized, or the tokens should move to <code>HttpOnly</code> cookies.</p>
+  <p>CSRF protection is disabled. That is correct for this design: CSRF attacks rely on the browser attaching credentials automatically (cookies), and this API only accepts credentials from an explicit <code>Authorization</code> header.</p>
+
+  <h4>21.6 Hidden tests and side channels</h4>
+  <p>Hidden test content never appears in a non-admin response, the sandbox has no network, a program's error output is not returned, and each workspace contains only that submission's files (the expected output is never written to disk). A determined cheater can still learn about hidden tests through side channels that every online judge shares: per-test verdicts, deliberate crashes or timeouts that depend on the input, and runtime differences. Defending against that is outside the scope of a project like this.</p>
+
+  <h4>21.7 Information in error messages</h4>
+  <p>The catch-all handler returns <code>"Internal server error: " + ex.getMessage()</code>. For database errors that message can include SQL fragments and constraint names; for type errors, Java class names. It helps during development and gives an attacker a map of the internals in production. A production build should log the detail and return a generic message.</p>
+
+  <h4>21.8 Secrets and exposed ports</h4>
+  <ul>
+    <li><code>JWT_SECRET</code> is hard-coded in <code>docker-compose.yml</code>, and a fallback secret sits in <code>application.yml</code>. Anyone who knows the secret can mint an admin token for any email.</li>
+    <li>The database password is <code>cpplatform</code>.</li>
+    <li>Compose publishes Postgres on port 5432 and Redis (no password) on 6379 to all interfaces. On a cloud VM without a firewall, both are reachable from the internet.</li>
+  </ul>
+  <p>All three are fine on a laptop and must change before any public deployment (chapter 28).</p>
+
+  <h4>21.9 The Docker socket</h4>
+  <p>Mounting <code>/var/run/docker.sock</code> into the backend gives the backend full control of the host's Docker engine. Anyone who can run commands as the backend can start a privileged container that mounts the host's root file system, which amounts to root on the host. Submitted code never gets the socket (runner containers do not mount it), so the risk is a vulnerability in the backend itself, not in the sandbox. The README states this trade-off. The standard mitigation is to move judging to a separate machine or VM that holds nothing else of value.</p>
+</section>
+
+<section class="ch" id="sandbox">
+  <span class="level advanced">Advanced</span>
+  <h3><span class="num">22</span>The sandbox, flag by flag</h3>
+  <p>A container is not a virtual machine. It is a normal Linux process that the kernel places inside namespaces (its own view of processes, network, mounts and users) and control groups (resource limits). All containers share the host kernel. The question for a judge is which walls exist and which are missing.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Threat</th><th>Control in this project</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Network access, data exfiltration</td><td><code>--network=none</code></td><td><span class="v ok">covered</span></td></tr>
+      <tr><td>Memory exhaustion</td><td><code>--memory=256m --memory-swap=256m</code></td><td><span class="v ok">covered</span> (reported as RE)</td></tr>
+      <tr><td>CPU monopolisation</td><td><code>--cpus=1</code>, timeout</td><td><span class="v warn">partial</span>: timed-out containers keep running</td></tr>
+      <tr><td>Fork bombs</td><td><code>--pids-limit=64</code></td><td><span class="v ok">covered</span></td></tr>
+      <tr><td>Tampering with the image</td><td><code>--read-only</code></td><td><span class="v ok">covered</span></td></tr>
+      <tr><td>Filling the disk</td><td><code>/tmp</code> tmpfs capped at 32 MB</td><td><span class="v bad">gap</span>: <code>/box</code> has no quota</td></tr>
+      <tr><td>Reading other submissions</td><td>Only <code>sub-{id}</code> is mounted</td><td><span class="v ok">covered</span></td></tr>
+      <tr><td>Running as root inside</td><td>Runner images use <code>USER sandboxuser</code> (uid 10001)</td><td><span class="v ok">covered</span></td></tr>
+      <tr><td>Privilege escalation</td><td>Docker's default seccomp profile and reduced capability set apply</td><td><span class="v warn">default only</span>: no <code>--cap-drop=ALL</code>, no <code>--security-opt no-new-privileges</code></td></tr>
+      <tr><td>Kernel exploits, container escape</td><td>None beyond Docker defaults</td><td><span class="v bad">gap</span>: shared kernel</td></tr>
+      <tr><td>Runaway output</td><td>None</td><td><span class="v bad">gap</span>: pipe deadlock (A7)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>22.1 The container leak, precisely</h4>
+  <p>On timeout the judge calls <code>process.destroyForcibly()</code> on the <code>docker run</code> <em>client</em> process. The client is only a messenger; the container belongs to the daemon. Killing the messenger does not stop the container, and <code>--rm</code> only removes a container after it exits. A robust version names each container (<code>--name judge-31-4</code>) and runs <code>docker kill judge-31-4</code> on timeout, or wraps the command in the <code>timeout</code> utility inside the container so the process ends itself (the class comment mentions a <code>timeout</code> backstop, but it is not implemented). Docker's <code>--stop-timeout</code> does not help, because nothing ever asks the container to stop.</p>
+
+  <h4>22.2 The output deadlock, precisely</h4>
+  <p><code>process.waitFor(timeout)</code> is called before anything reads <code>process.getInputStream()</code>. The child writes into a pipe of fixed capacity; when it is full, the child's <code>write</code> call blocks; the child can then never exit, so <code>waitFor</code> times out. The fix is to drain standard output and standard error concurrently, on separate threads or with <code>ProcessBuilder.redirectOutput</code> to files, and to cap the amount read so a program cannot exhaust the judge's memory.</p>
+
+  <h4>22.3 What "time" means here</h4>
+  <p>The measured time is wall-clock time of the <code>docker run</code> client, including image lookup, namespace creation, cgroup setup, process start, the program itself, and container removal. On a typical machine the overhead alone is 300–900 ms, varies with load, and is the same for a C++ solution and a Python one. Proper judges measure CPU time of the user process from inside the sandbox (for example from the cgroup's <code>cpu.stat</code>, or with <code>/usr/bin/time</code>), and keep containers warm instead of creating one per test.</p>
+
+  <h4>22.4 Stronger isolation options</h4>
+  <ul>
+    <li><strong>gVisor</strong> (<code>--runtime=runsc</code>): intercepts system calls in a user-space kernel, so a kernel exploit has to break gVisor first. Drop-in for this design.</li>
+    <li><strong>Firecracker microVMs</strong>: real virtual machines that start in about 125 ms. Strongest isolation; more infrastructure.</li>
+    <li><strong>isolate</strong> (the sandbox used by the International Olympiad in Informatics): lightweight, measures CPU time and memory precisely, designed for judges.</li>
+    <li>Cheap hardening of the current setup: <code>--cap-drop=ALL</code>, <code>--security-opt=no-new-privileges</code>, <code>--ulimit fsize=...</code> to cap file size, and a size-limited tmpfs for <code>/box</code> with the files copied in.</li>
+  </ul>
+</section>
+
+<section class="ch" id="concurrency">
+  <span class="level advanced">Advanced</span>
+  <h3><span class="num">23</span>Threads and transactions</h3>
+
+  <h4>23.1 Who runs what</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Thread pool</th><th>Size</th><th>Runs</th></tr></thead>
+    <tbody>
+      <tr><td>Tomcat request threads</td><td>up to 200</td><td>Every HTTP request, including polling</td></tr>
+      <tr><td>Spring task executor (<code>@Async</code>)</td><td>8 core threads, unbounded queue</td><td><code>judgeAsync</code></td></tr>
+      <tr><td>HikariCP connections</td><td>10</td><td>Shared by both of the above</td></tr>
+      <tr><td>OS processes</td><td>1 per running <code>docker</code> client</td><td>Each sandbox run</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>23.2 Why <code>submit()</code> must not be transactional</h4>
+  <p><code>submit()</code> saves the submission and then queues the judge. Because <code>submit()</code> has no surrounding transaction, the save commits before the queueing call. If someone later adds <code>@Transactional</code> to <code>submit()</code>, the commit would move to the end of the method, after <code>judgeAsync</code> was queued. The worker thread could then run <code>findById</code> before the commit, find nothing, and throw from <code>orElseThrow()</code>. The submission would stay PENDING forever, intermittently, depending on timing. The robust pattern is to trigger judging after commit, for example with <code>@TransactionalEventListener(phase = AFTER_COMMIT)</code>, or to use a queue (chapter 30).</p>
+
+  <h4>23.3 One long transaction in the judge</h4>
+  <p><code>judgeAsync</code> is both <code>@Async</code> and <code>@Transactional</code>. The async proxy moves the call to a worker thread; the transactional proxy opens a transaction on that thread that lasts until judging ends. Consequences:</p>
+  <ul>
+    <li><strong>RUNNING is never visible.</strong> Under Postgres's default read-committed isolation, pollers only see committed data.</li>
+    <li><strong>Results appear all at once.</strong> Partial results cannot be shown while judging is in progress.</li>
+    <li><strong>A connection is held for the whole judging time</strong>, up to tens of seconds (case A16).</li>
+    <li><strong>Error handling can fail.</strong> If a database exception occurs inside the loop (say a constraint violation saving a result), Spring marks the transaction rollback-only. The catch block then sets INTERNAL_ERROR and saves, but the commit throws <code>UnexpectedRollbackException</code>, everything rolls back, and the submission remains PENDING.</li>
+  </ul>
+  <p>A better shape is short transactions: one to mark RUNNING, one per result (or one at the end), one to finish. The Docker work itself needs no transaction at all.</p>
+
+  <h4>23.4 How <code>@Async</code> works here</h4>
+  <p><code>@EnableAsync</code> makes Spring wrap beans that have <code>@Async</code> methods in a proxy. A call from another bean goes through the proxy and is submitted to the executor; the caller gets control back immediately. Two rules follow. A call from inside <code>JudgeService</code> to its own <code>judgeAsync</code> would bypass the proxy and run synchronously. And because the method returns <code>void</code>, any exception that escapes it is only logged by Spring's default uncaught-exception handler; the caller never learns about it.</p>
+
+  <h4>23.5 Lazy loading and "open session in view"</h4>
+  <p>Relationships are lazy, so for example <code>problem.getTags()</code> issues a query when first called. That only works while a Hibernate session is open. Spring Boot enables <code>spring.jpa.open-in-view</code> by default, which keeps a session open for the whole web request, and logs a warning about it at start-up. This is why <code>ProblemService.list</code> (not transactional) can map tags, and why <code>SubmissionService.toView</code> can read <code>result.getTestCase().isPublic()</code>. Inside <code>judgeAsync</code> there is no web request; the method's own transaction provides the session.</p>
+  <p>The <code>User</code> principal is loaded inside the security filter, before the open-session interceptor starts, so it arrives in controllers as a detached entity. Using it as a reference when saving a new submission is fine, because only its id is needed for the foreign key.</p>
+</section>
+
+<section class="ch" id="spring">
+  <span class="level advanced">Advanced</span>
+  <h3><span class="num">24</span>Spring subtleties</h3>
+  <h4>24.1 The JWT filter is registered twice</h4>
+  <p><code>JwtAuthFilter</code> is a <code>@Component</code> that implements <code>Filter</code>. Spring Boot automatically registers every filter bean with the servlet container, <em>and</em> <code>SecurityConfig</code> adds it to the security chain. It therefore sits in two chains. It still runs only once per request because it extends <code>OncePerRequestFilter</code>, which marks the request after the first pass. The usual way to make this explicit is a <code>FilterRegistrationBean</code> with <code>setEnabled(false)</code>.</p>
+
+  <h4>24.2 Errors that become 500</h4>
+  <p>The <code>@ExceptionHandler(Exception.class)</code> catch-all runs before Spring's built-in resolvers, so many errors that Spring would normally answer with a 4xx become 500:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Request</th><th>Exception</th><th>Should be</th></tr></thead>
+    <tbody>
+      <tr><td>Wrong password</td><td><code>BadCredentialsException</code></td><td>401</td></tr>
+      <tr><td>Expired refresh token</td><td><code>ExpiredJwtException</code></td><td>401</td></tr>
+      <tr><td>Malformed JSON, unknown enum value</td><td><code>HttpMessageNotReadableException</code></td><td>400</td></tr>
+      <tr><td><code>/api/submissions/abc</code>, <code>?difficulty=SUPER</code></td><td><code>MethodArgumentTypeMismatchException</code></td><td>400</td></tr>
+      <tr><td>Unknown URL with a valid token</td><td><code>NoResourceFoundException</code></td><td>404</td></tr>
+      <tr><td>Wrong HTTP method</td><td><code>HttpRequestMethodNotSupportedException</code></td><td>405</td></tr>
+      <tr><td>Edit after submissions, slug collision</td><td><code>DataIntegrityViolationException</code></td><td>409</td></tr>
+    </tbody>
+  </table></div>
+  <p>An unknown URL <em>without</em> a token returns 401 rather than 404, because the "anything else" rule requires authentication before Spring even looks for a handler.</p>
+
+  <h4>24.3 The <code>-parameters</code> compiler flag</h4>
+  <p><code>@PathVariable Long id</code> and the JPQL parameter <code>:problemId</code> in <code>TestCaseRepository</code> are bound by matching Java parameter names. Those names only exist at runtime if the code is compiled with <code>-parameters</code>. The Spring Boot parent POM enables it, so Maven builds work. Building with a tool that does not set it fails at runtime with "name for argument ... not specified". Explicit names (<code>@PathVariable("id")</code>, <code>@Param("problemId")</code>) remove the dependency.</p>
+
+  <h4>24.4 Lombok and booleans named <code>isX</code></h4>
+  <p>For the field <code>boolean isPublic</code>, Lombok generates the getter <code>isPublic()</code> and the setter <code>setPublic()</code>, while the builder method is <code>isPublic(...)</code>. The code uses the getter and builder only, so this is consistent. The JSON property in the DTO records is <code>isPublic</code>; with Jackson 2.17 records serialize and deserialize with that exact name (tested).</p>
+
+  <h4>24.5 Schema management</h4>
+  <p><code>ddl-auto: update</code> adds tables and columns but never removes, renames or retypes them, and it does not run data migrations. Hibernate 6 also generates check constraints for enum columns; adding a new value to an enum such as <code>Language</code> later may not update the existing constraint, and inserts with the new value would then fail. A real deployment should switch to Flyway or Liquibase migrations and set <code>ddl-auto: validate</code>.</p>
+
+  <h4>24.6 Smaller details</h4>
+  <ul>
+    <li>Returning a <code>Page</code> directly from a controller works but Spring Data 3.3 logs a warning that the JSON structure is not guaranteed to stay stable.</li>
+    <li>The Redis starter is on the classpath and configured; it is unused.</li>
+    <li><code>judge.default-time-limit-seconds</code> is defined in <code>application.yml</code> and read nowhere.</li>
+    <li><code>ProblemService.getEntityById</code> carries a comment saying it is package-private; it is public.</li>
+    <li>The <code>DaoAuthenticationProvider</code> bean is picked up by <code>AuthenticationConfiguration</code>, which is how <code>AuthenticationManager</code> knows to use BCrypt and the custom user lookup.</li>
+  </ul>
+</section>
+
+<!-- ============ PART VI ============ -->
+<div class="part-head">
+  <div class="eyebrow">Part VI</div>
+  <h2>Operating it</h2>
+  <p>Running, configuring, fixing and deploying the platform.</p>
+</div>
+
+<section class="ch" id="running">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">25</span>Running it</h3>
+  <h4>25.1 Everything in Docker (recommended)</h4>
+  <pre class="code"><code><span class="cm"># from the cp-platform folder, with Docker Desktop running</span>
+docker build -t judge-runner-cpp    -f docker/runners/Dockerfile.cpp    docker/runners
+docker build -t judge-runner-python -f docker/runners/Dockerfile.python docker/runners
+docker build -t judge-runner-java   -f docker/runners/Dockerfile.java   docker/runners
+docker compose up --build</code></pre>
+  <p>Open <code>http://localhost:3000</code>. The backend is also directly reachable at <code>http://localhost:8080</code>.</p>
+
+  <h4>25.2 Creating the first admin</h4>
+  <pre class="code"><code><span class="cm"># register through the UI first, then:</span>
+docker compose exec postgres psql -U cpplatform -d cpplatform \
+  -c "UPDATE users SET role='ADMIN' WHERE email='you@example.com';"
+<span class="cm"># then log out and log back in so the UI picks up the role (case B8)</span></code></pre>
+
+  <h4>25.3 Backend and frontend outside Docker</h4>
+  <pre class="code"><code><span class="cm"># infrastructure only</span>
+docker run -d --name pg -e POSTGRES_DB=cpplatform -e POSTGRES_USER=cpplatform \
+  -e POSTGRES_PASSWORD=cpplatform -p 5432:5432 postgres:16-alpine
+<span class="cm"># runner images: as in 25.1</span>
+
+cd backend &amp;&amp; mvn spring-boot:run          <span class="cm"># http://localhost:8080</span>
+cd frontend &amp;&amp; npm install &amp;&amp; npm run dev   <span class="cm"># http://localhost:5173</span></code></pre>
+  <p>On JDK 23 or newer, <code>mvn</code> fails until Lombok's annotation processing is enabled (case D5). Either use JDK 17 or 21, or add this to the <code>&lt;plugins&gt;</code> section of <code>pom.xml</code>:</p>
+  <pre class="code"><code>&lt;plugin&gt;
+  &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+  &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;annotationProcessorPaths&gt;
+      &lt;path&gt;
+        &lt;groupId&gt;org.projectlombok&lt;/groupId&gt;
+        &lt;artifactId&gt;lombok&lt;/artifactId&gt;
+        &lt;version&gt;${lombok.version}&lt;/version&gt;
+      &lt;/path&gt;
+    &lt;/annotationProcessorPaths&gt;
+  &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+  <p>Running the backend directly on Windows has not been tested. The workspace path <code>/tmp/judge</code> resolves to <code>C:\tmp\judge</code>, the permission change is skipped, and Docker Desktop has to accept the Windows path in <code>-v</code>; expect to adjust <code>JUDGE_WORKSPACE</code>.</p>
+
+  <h4>25.4 A smoke test from the command line</h4>
+  <pre class="code"><code>API=http://localhost:8080/api
+<span class="cm"># 1. register (then promote to ADMIN as in 25.2) and log in</span>
+curl -s -X POST $API/auth/register -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","username":"admin","password":"password123"}'
+TOKEN=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"password123"}' | jq -r .accessToken)
+
+<span class="cm"># 2. create a problem</span>
+curl -s -X POST $API/problems -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Sum of Two","difficulty":"EASY","statement":"Print a+b.",
+       "testCases":[{"input":"3 4","expectedOutput":"7","isPublic":true},
+                    {"input":"-5 5","expectedOutput":"0","isPublic":false}]}'
+
+<span class="cm"># 3. submit Python and poll</span>
+ID=$(curl -s -X POST $API/submissions -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"problemId":1,"language":"PYTHON","sourceCode":"a,b=map(int,input().split())\nprint(a+b)"}' | jq .id)
+sleep 5; curl -s $API/submissions/$ID -H "Authorization: Bearer $TOKEN" | jq .status   <span class="cm"># "ACCEPTED"</span></code></pre>
+</section>
+
+<section class="ch" id="config">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">26</span>Configuration reference</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Setting</th><th>Env variable</th><th>Default</th><th>Used by</th></tr></thead>
+    <tbody>
+      <tr><td><code>spring.datasource.url</code></td><td><code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code></td><td><code>localhost:5432/cpplatform</code></td><td>Connection pool</td></tr>
+      <tr><td><code>spring.datasource.username</code> / <code>password</code></td><td><code>DB_USER</code>, <code>DB_PASSWORD</code></td><td><code>cpplatform</code> / <code>cpplatform</code></td><td>Connection pool</td></tr>
+      <tr><td><code>spring.jpa.hibernate.ddl-auto</code></td><td></td><td><code>update</code></td><td>Schema creation</td></tr>
+      <tr><td><code>spring.data.redis.host</code> / <code>port</code></td><td><code>REDIS_HOST</code>, <code>REDIS_PORT</code></td><td><code>localhost:6379</code></td><td>Nothing (unused)</td></tr>
+      <tr><td><code>server.port</code></td><td></td><td><code>8080</code></td><td>Tomcat</td></tr>
+      <tr><td><code>jwt.secret</code></td><td><code>JWT_SECRET</code></td><td>placeholder string (62 bytes)</td><td>Token signing; at least 32 bytes required</td></tr>
+      <tr><td><code>jwt.access-token-expiry-ms</code></td><td></td><td><code>900000</code> (15 min)</td><td>Access tokens</td></tr>
+      <tr><td><code>jwt.refresh-token-expiry-ms</code></td><td></td><td><code>604800000</code> (7 days)</td><td>Refresh tokens</td></tr>
+      <tr><td><code>judge.workspace-dir</code></td><td><code>JUDGE_WORKSPACE</code></td><td><code>/tmp/judge</code> (compose: <code>/tmp/judge-workspace</code>)</td><td>Submission folders</td></tr>
+      <tr><td><code>judge.docker-memory</code></td><td></td><td><code>256m</code></td><td>Every sandbox run</td></tr>
+      <tr><td><code>judge.docker-cpus</code></td><td></td><td><code>1</code></td><td>Every sandbox run</td></tr>
+      <tr><td><code>judge.docker-pids-limit</code></td><td></td><td><code>64</code></td><td>Every sandbox run</td></tr>
+      <tr><td><code>judge.default-time-limit-seconds</code></td><td></td><td><code>5</code></td><td>Nothing (unused)</td></tr>
+      <tr><td><code>logging.level.com.cpplatform</code></td><td></td><td><code>INFO</code></td><td>Application logs</td></tr>
+    </tbody>
+  </table></div>
+  <p>Any Spring property can also be set as an environment variable in upper-case form, for example <code>JUDGE_DOCKER_MEMORY=512m</code>.</p>
+  <p>Fixed in code rather than configuration: the compile timeout (20 s), the run-timeout formula, the <code>/tmp</code> tmpfs size (32 MB), compile-error truncation (4,000 characters), the allowed CORS origins, the polling interval (1.5 s, frontend) and the page size (20).</p>
+</section>
+
+<section class="ch" id="troubleshooting">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">27</span>Troubleshooting</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td class="wrap">Every C++/Java submission is COMPILE_ERROR mentioning "Unable to find image"</td><td class="wrap">Runner images not built (D1)</td><td class="wrap">Run the three <code>docker build</code> commands</td></tr>
+      <tr><td class="wrap">COMPILE_ERROR mentioning "Cannot connect to the Docker daemon"</td><td class="wrap">Socket not mounted or Docker stopped (D2)</td><td class="wrap">Start Docker Desktop; check the compose volume</td></tr>
+      <tr><td class="wrap">COMPILE_ERROR mentioning "client version ... is too old"</td><td class="wrap">Old Docker client in backend image (D4)</td><td class="wrap">Install <code>docker-ce-cli</code> in the backend Dockerfile</td></tr>
+      <tr><td class="wrap">Every Python submission is RUNTIME_ERROR, even correct ones</td><td class="wrap">Same causes as above; Python has no compile step to show the message</td><td class="wrap">Check the backend log for the exit code and stderr</td></tr>
+      <tr><td class="wrap">C++ compile fails with a permission error writing <code>sol</code></td><td class="wrap">Workspace not writable by uid 10001</td><td class="wrap">Make sure the workspace is on a Linux file system and the permission change succeeds</td></tr>
+      <tr><td class="wrap">COMPILE_ERROR saying <code>solution.cpp</code> does not exist</td><td class="wrap">Host and container workspace paths differ</td><td class="wrap">Mount the workspace at the identical path on both sides</td></tr>
+      <tr><td class="wrap">Judging gets slower and slower over the day</td><td class="wrap">Leaked containers from timeouts (A4)</td><td class="wrap"><code>docker ps</code>, then <code>docker kill</code> the judge containers</td></tr>
+      <tr><td class="wrap">Submission stays PENDING forever</td><td class="wrap">Backend restarted mid-judge (D3), or rollback-only error (23.3)</td><td class="wrap">Resubmit; check the backend log</td></tr>
+      <tr><td class="wrap"><code>mvn compile</code>: hundreds of "cannot find symbol" errors</td><td class="wrap">JDK 23+ without Lombok processing (D5)</td><td class="wrap">25.3</td></tr>
+      <tr><td class="wrap">Login shows "Internal server error: Bad credentials"</td><td class="wrap">Wrong email or password (B5)</td><td class="wrap">Check the credentials, including email capitalisation</td></tr>
+      <tr><td class="wrap">Admin buttons missing after promotion</td><td class="wrap">Role cached in the browser (B8)</td><td class="wrap">Log out and back in</td></tr>
+      <tr><td class="wrap">Editing a problem fails with "could not execute statement"</td><td class="wrap">Problem has submissions (C4)</td><td class="wrap">No UI workaround; fix the code (chapter 29)</td></tr>
+      <tr><td class="wrap">Code editor stuck on "Loading..."</td><td class="wrap">CDN blocked or offline (D6)</td><td class="wrap">Allow <code>cdn.jsdelivr.net</code> or bundle Monaco locally</td></tr>
+      <tr><td class="wrap">502 Bad Gateway right after <code>compose up</code></td><td class="wrap">Backend still starting</td><td class="wrap">Wait 10–30 seconds</td></tr>
+      <tr><td class="wrap">Backend exits with a database connection error</td><td class="wrap">Postgres not up, wrong <code>DB_*</code> variables</td><td class="wrap">Check <code>docker compose ps</code> and the variables</td></tr>
+      <tr><td class="wrap">Frontend image build is slow or fails after a local <code>npm install</code></td><td class="wrap">No <code>.dockerignore</code>, so local <code>node_modules</code> is copied into the image</td><td class="wrap">Add <code>frontend/.dockerignore</code> containing <code>node_modules</code> and <code>dist</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="ch" id="deploying">
+  <span class="level developer">Developer</span> <span class="level advanced">Advanced</span>
+  <h3><span class="num">28</span>Deploying</h3>
+  <p>The simplest real deployment is the same compose file on one Linux VM. The backend needs access to a Docker daemon, which rules out most serverless and managed-container platforms for the backend itself. Before exposing it to the internet:</p>
+  <ol class="steps">
+    <li>Set a long random <code>JWT_SECRET</code> (for example 64 bytes from <code>openssl rand -base64 64</code>) and keep it out of version control.</li>
+    <li>Change the Postgres password.</li>
+    <li>Remove the <code>ports</code> entries for Postgres and Redis, or bind them to <code>127.0.0.1</code>.</li>
+    <li>Put a TLS-terminating proxy (Caddy or nginx with Let's Encrypt) in front of port 3000, and stop publishing 8080.</li>
+    <li>Fix the container leak (A4) and the output deadlock (A7). On a public site, someone will submit an infinite loop within the first day.</li>
+    <li>Replace detailed 500 messages with generic ones (21.7).</li>
+    <li>Back up the <code>pgdata</code> volume, or use a managed Postgres.</li>
+    <li>Consider gVisor for the runner containers, and a dedicated VM for judging if anything else of value runs on the same host (21.9).</li>
+    <li>If the frontend is hosted on a different domain (Vercel, Netlify), add that origin to the CORS configuration in <code>SecurityConfig</code>.</li>
+  </ol>
+</section>
+
+<!-- ============ PART VII ============ -->
+<div class="part-head">
+  <div class="eyebrow">Part VII</div>
+  <h2>What's next</h2>
+  <p>Every known issue in one place, and the path from a single-server demo to a scalable judge.</p>
+</div>
+
+<section class="ch" id="issues">
+  <span class="level developer">Developer</span>
+  <h3><span class="num">29</span>Known issues</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Severity</th><th>Issue</th><th>Case</th><th>Fix outline</th></tr></thead>
+    <tbody>
+      <tr><td><span class="v bad">High</span></td><td class="wrap">Timed-out containers keep running</td><td>A4</td><td class="wrap">Name containers; <code>docker kill</code> on timeout</td></tr>
+      <tr><td><span class="v bad">High</span></td><td class="wrap">Problems cannot be edited after the first submission</td><td>C4</td><td class="wrap">Update test cases in place by id, or soft-delete them, or cascade results</td></tr>
+      <tr><td><span class="v warn">Medium</span></td><td class="wrap">Large output becomes TLE</td><td>A7</td><td class="wrap">Read output while waiting; cap size</td></tr>
+      <tr><td><span class="v warn">Medium</span></td><td class="wrap">Submissions stuck in PENDING after a restart or rollback-only error</td><td>D3</td><td class="wrap">Re-queue PENDING/RUNNING at start-up; short transactions</td></tr>
+      <tr><td><span class="v warn">Medium</span></td><td class="wrap">No disk quota on <code>/box</code></td><td>A13</td><td class="wrap"><code>--ulimit fsize</code>, or a sized tmpfs</td></tr>
+      <tr><td><span class="v warn">Medium</span></td><td class="wrap">Wrong password, bad input and unknown URLs return 500</td><td>B5</td><td class="wrap">Specific exception handlers</td></tr>
+      <tr><td><span class="v warn">Medium</span></td><td class="wrap">Secrets in compose; databases published on all interfaces</td><td>21.8</td><td class="wrap">Environment files; remove port mappings</td></tr>
+      <tr><td><span class="v warn">Medium</span></td><td class="wrap">Local build fails on JDK 23+</td><td>D5</td><td class="wrap">Lombok annotation processor path</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Problem memory limit ignored; MLE never reported</td><td>A6</td><td class="wrap">Pass <code>memoryLimitMb</code> to <code>--memory</code>; map exit 137 to MLE</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Runtime includes container start-up; loose time limits</td><td>22.3</td><td class="wrap">Measure CPU time inside the sandbox</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">RUNNING status never visible</td><td>23.3</td><td class="wrap">Commit status changes separately</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Empty slug for non-Latin titles</td><td>C2</td><td class="wrap">Fall back to <code>problem-{id}</code></td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Test case weights ignored in scoring</td><td>15.9</td><td class="wrap">Weighted score, or remove the field</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Problem list shows only 20 problems</td><td>C6</td><td class="wrap">Paging controls</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Changing language erases code; logging in erases code</td><td>C8, B12</td><td class="wrap">Keep code per language; save drafts locally</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Usernames not unique; emails case-sensitive</td><td>B2, B3</td><td class="wrap">Unique constraint; lowercase emails on input</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Validation errors show a generic message on Register</td><td>B4</td><td class="wrap">Display field errors</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap"><code>"abc \r\n"</code> not normalized</td><td>A8</td><td class="wrap">Replace <code>\r\n</code> before trimming spaces</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Refresh tokens never invalidated; logout is client-only</td><td>13.5</td><td class="wrap">Store refresh tokens server-side with rotation</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Leaderboard makes one query per user</td><td>16</td><td class="wrap">One aggregate query, or Redis</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">No automated tests</td><td>1</td><td class="wrap">Service tests; a judge integration test with Testcontainers</td></tr>
+      <tr><td><span class="v na">Low</span></td><td class="wrap">Unused pieces: Redis, <code>default-time-limit-seconds</code>, <code>memoryKb</code>, <code>/users/me</code>, <code>/submissions/me</code></td><td>24.6</td><td class="wrap">Use or remove</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="ch" id="roadmap">
+  <span class="level advanced">Advanced</span>
+  <h3><span class="num">30</span>Roadmap</h3>
+  <p>The README already names the intended direction. Put together, the target architecture looks like this:</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart LR
+  FE["Frontend (static hosting + CDN)"] --> API["API service (stateless, N instances)"]
+  API --> PG[("PostgreSQL")]
+  API -->|"publish job"| Q[["Queue: Kafka or Redis Streams"]]
+  Q --> W1["Judge worker 1"]
+  Q --> W2["Judge worker 2"]
+  Q --> W3["Judge worker N"]
+  W1 -->|"verdicts"| PG
+  W1 -->|"ZINCRBY on first accept"| RD[("Redis: leaderboard sorted set")]
+  API -->|"ZREVRANGE"| RD
+  API -->|"Server-Sent Events"| FE
+  </pre></div>
+  <p class="caption">Figure 30.1 · Where the design is heading.</p>
+
+  <h4>In order of value</h4>
+  <ol class="steps">
+    <li><strong>Correctness of the judge.</strong> Kill timed-out containers, stream output, enforce memory limits, report MLE, measure CPU time. Without these, nothing built on top is trustworthy.</li>
+    <li><strong>Fix problem editing.</strong> Edit test cases in place and keep historical results meaningful.</li>
+    <li><strong>A queue between API and judge.</strong> Submissions become messages; any number of judge workers consume them. This removes the in-memory executor, so restarts no longer lose work, gives back-pressure under load, and lets judging move to separate, isolated machines without the Docker socket on the API host.</li>
+    <li><strong>Push instead of poll.</strong> Server-Sent Events or WebSockets deliver status changes, including a visible RUNNING state and per-test progress.</li>
+    <li><strong>Redis leaderboard.</strong> A sorted set keyed by user, incremented on a user's first accept for a problem; reading the top 50 is one command regardless of user count.</li>
+    <li><strong>Contests.</strong> Time-boxed problem sets, per-contest rankings and penalties; this is where the Redis leaderboard pays off.</li>
+    <li><strong>Engineering hygiene.</strong> Flyway migrations, tests (service tests plus a Testcontainers judge test), CI, a <code>.dockerignore</code>, and specific exception handlers.</li>
+    <li><strong>Stronger isolation.</strong> gVisor or Firecracker for the runner containers, and dropped capabilities.</li>
+  </ol>
+  <p>Each step can be shipped and measured independently. Step 3 in particular gives a concrete, measurable story: submissions per second before and after adding workers.</p>
+</section>
+
+<footer>
+  CP Platform Handbook · written from a full reading of the cp-platform source (backend Spring Boot 3.3.2, frontend React 18), October 2026. Behaviour marked "tested" was reproduced; everything else was derived from the code.
+</footer>
+</main>
+</div>
+
+</body>
+</html>

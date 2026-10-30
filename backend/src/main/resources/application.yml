@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:cpplatform}
+    username: ${DB_USER:cpplatform}
+    password: ${DB_PASSWORD:cpplatform}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: 8080
+
+jwt:
+  secret: ${JWT_SECRET:change-this-to-a-long-random-string-in-production-min-256-bits}
+  access-token-expiry-ms: 900000        # 15 min
+  refresh-token-expiry-ms: 604800000    # 7 days
+
+judge:
+  workspace-dir: ${JUDGE_WORKSPACE:/tmp/judge}
+  docker-memory: 256m
+  docker-cpus: "1"
+  docker-pids-limit: 64
+  default-time-limit-seconds: 5
+
+logging:
+  level:
+    com.cpplatform: INFO

@@ -1,0 +1,30 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0f1115;
+  color: #e6e6e6;
+}
+a { color: #6ea8fe; text-decoration: none; }
+nav { display: flex; gap: 1.5rem; padding: 1rem 2rem; border-bottom: 1px solid #24262b; align-items: center; }
+nav .spacer { flex: 1; }
+button, input, select {
+  font-family: inherit; font-size: 0.95rem;
+  background: #1b1e24; color: #e6e6e6; border: 1px solid #30333a;
+  border-radius: 6px; padding: 0.5rem 0.8rem;
+}
+button { cursor: pointer; background: #2b5fd9; border: none; }
+button:hover { background: #3a6fe0; }
+button.secondary { background: #1b1e24; border: 1px solid #30333a; }
+.container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+.card { background: #1b1e24; border: 1px solid #24262b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.6rem; border-bottom: 1px solid #24262b; }
+.badge { padding: 0.15rem 0.6rem; border-radius: 12px; font-size: 0.8rem; }
+.badge.EASY { background: #1e4620; color: #7ee38a; }
+.badge.MEDIUM { background: #4a3c14; color: #f0c26a; }
+.badge.HARD { background: #4a1e1e; color: #f08a8a; }
+.badge.ACCEPTED { background: #1e4620; color: #7ee38a; }
+.badge.WRONG_ANSWER, .badge.RUNTIME_ERROR, .badge.COMPILE_ERROR, .badge.TIME_LIMIT_EXCEEDED { background: #4a1e1e; color: #f08a8a; }
+.badge.PENDING, .badge.RUNNING { background: #30333a; color: #cfd2d8; }
+form { display: flex; flex-direction: column; gap: 0.8rem; max-width: 400px; }
