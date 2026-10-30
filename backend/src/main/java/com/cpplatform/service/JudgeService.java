@@ -1,22 +1,20 @@
 package com.cpplatform.service;
 
-import com.cpplatform.entity.*;
-import com.cpplatform.repository.SubmissionRepository;
-import com.cpplatform.repository.SubmissionResultRepository;
-import com.cpplatform.repository.TestCaseRepository;
-import com.cpplatform.repository.UserProgressRepository;
+import com.cpplatform.entity.SubmissionStatus;
+import com.cpplatform.service.JudgePersistence.JudgeJob;
+import com.cpplatform.service.JudgePersistence.TcData;
+import com.cpplatform.service.JudgePersistence.TcOutcome;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -27,17 +25,19 @@ import java.util.concurrent.TimeUnit;
  *
  * Isolation: --network=none, memory/cpu/pids caps, read-only root fs, non-root user
  * inside the runner image, wall-clock `timeout` as a backstop.
+ *
+ * Transaction model: this method is {@code @Async} but NOT {@code @Transactional}.
+ * All database writes go through {@link JudgePersistence}, a separate bean whose
+ * methods each open a short transaction. That keeps the (slow) compile/run steps
+ * from holding a database transaction — and a pooled connection — open for their
+ * whole duration. See {@link JudgePersistence} for why it is a separate bean.
  */
 @Service
-@Slf4j //logging
+@Slf4j
 @RequiredArgsConstructor
 public class JudgeService {
 
-    private final SubmissionRepository submissionRepository;
-    private final SubmissionResultRepository submissionResultRepository;
-    private final TestCaseRepository testCaseRepository;
-    private final UserProgressRepository userProgressRepository;
-    private final ProblemService problemService;
+    private final JudgePersistence persistence;
 
     @Value("${judge.workspace-dir}")
     private String workspaceDir;
@@ -54,60 +54,61 @@ public class JudgeService {
     private record RunResult(String stdout, String stderr, int exitCode, boolean timedOut, long wallMs) {}
 
     @Async
-    @Transactional
     public void judgeAsync(Long submissionId) {
-        Submission submission = submissionRepository.findById(submissionId).orElseThrow();
-        Problem problem = submission.getProblem();
-        Path workDir = null;
-
+        JudgeJob job;
         try {
-            submission.setStatus(SubmissionStatus.RUNNING);
-            submissionRepository.save(submission);
+            job = persistence.beginJudging(submissionId); // short tx: mark RUNNING, load inputs
+        } catch (Exception e) {
+            log.error("Failed to start judging submission {}", submissionId, e);
+            safeMarkError(submissionId, "Failed to start judging: " + e.getMessage());
+            return;
+        }
+
+        Path workDir = null;
+        try {
+            RunnerConfig cfg = RunnerConfig.forLanguage(job.language());
 
             workDir = Files.createDirectories(Path.of(workspaceDir, "sub-" + submissionId));
             // the sandbox container runs as a non-root user for isolation, but the
-            // directory was just created by this (root) process — without this, g++
-            // can read solution.cpp but can't write the compiled binary back into /box
+            // directory was just created by this process — without this, g++ can read
+            // solution.cpp but can't write the compiled binary back into /box
             try {
                 Files.setPosixFilePermissions(workDir,
                         java.nio.file.attribute.PosixFilePermissions.fromString("rwxrwxrwx"));
             } catch (UnsupportedOperationException ignored) {
                 // non-POSIX filesystem (shouldn't happen in the Linux container, but don't crash if so)
             }
-            RunnerConfig cfg = RunnerConfig.forLanguage(submission.getLanguage());
-            Files.writeString(workDir.resolve(cfg.sourceFileName()), submission.getSourceCode(), StandardCharsets.UTF_8);
+            Files.writeString(workDir.resolve(cfg.sourceFileName()), job.sourceCode(), StandardCharsets.UTF_8);
 
-            // --- Compile step (no-op for interpreted languages) ---
+            // --- Compile step (no-op for interpreted languages without a compile command) ---
             if (cfg.needsCompile()) {
                 RunResult compileResult = runDocker(cfg.image(), workDir,
                         cfg.compileCommand(), 20, /*networkNone*/ true, /*compileStep*/ true);
                 if (compileResult.exitCode() != 0) {
-                    submission.setStatus(SubmissionStatus.COMPILE_ERROR);
-                    submission.setErrorMessage(truncate(compileResult.stderr(), 4000));
-                    submission.setJudgedAt(Instant.now());
-                    submissionRepository.save(submission);
+                    persistence.recordCompileError(submissionId, truncate(compileResult.stderr(), 4000));
                     return;
                 }
             }
 
-            List<TestCase> testCases = testCaseRepository.findByProblemId(problem.getId());
+            // --- Run each test case (no DB transaction open during any of this) ---
             int passed = 0;
             int maxRuntimeMs = 0;
             SubmissionStatus finalVerdict = SubmissionStatus.ACCEPTED;
+            List<TcOutcome> outcomes = new ArrayList<>();
+            double timeLimitSec = Math.max(1, job.timeLimitMs() / 1000.0);
 
-            for (TestCase tc : testCases) {
-                Files.writeString(workDir.resolve("input.txt"), tc.getInput(), StandardCharsets.UTF_8);
+            for (TcData tc : job.testCases()) {
+                Files.writeString(workDir.resolve("input.txt"), tc.input(), StandardCharsets.UTF_8);
 
-                double timeLimitSec = Math.max(1, problem.getTimeLimitMs() / 1000.0);
-                RunResult run = runDocker(cfg.image(), workDir, cfg.runCommand(), (int) Math.ceil(timeLimitSec) + 2,
-                        true, false);
+                RunResult run = runDocker(cfg.image(), workDir, cfg.runCommand(),
+                        (int) Math.ceil(timeLimitSec) + 2, true, false);
 
                 SubmissionStatus verdict;
                 if (run.timedOut()) {
                     verdict = SubmissionStatus.TIME_LIMIT_EXCEEDED;
                 } else if (run.exitCode() != 0) {
                     verdict = SubmissionStatus.RUNTIME_ERROR;
-                } else if (normalize(run.stdout()).equals(normalize(tc.getExpectedOutput()))) {
+                } else if (normalize(run.stdout()).equals(normalize(tc.expectedOutput()))) {
                     verdict = SubmissionStatus.ACCEPTED;
                     passed++;
                 } else {
@@ -118,38 +119,25 @@ public class JudgeService {
 
                 if (verdict != SubmissionStatus.ACCEPTED) {
                     log.warn("Submission {} testCase {} verdict={} exitCode={} timedOut={} stderr=[{}] stdout=[{}]",
-                            submissionId, tc.getId(), verdict, run.exitCode(), run.timedOut(),
+                            submissionId, tc.id(), verdict, run.exitCode(), run.timedOut(),
                             truncate(run.stderr(), 500), truncate(run.stdout(), 200));
                 }
 
-                SubmissionResult result = SubmissionResult.builder()
-                        .submission(submission)
-                        .testCase(tc)
-                        .verdict(verdict)
-                        .runtimeMs((int) run.wallMs())
-                        .build();
-                submissionResultRepository.save(result);
+                outcomes.add(new TcOutcome(tc.id(), verdict, (int) run.wallMs(), null));
 
                 if (verdict != SubmissionStatus.ACCEPTED && finalVerdict == SubmissionStatus.ACCEPTED) {
                     finalVerdict = verdict; // first failing verdict becomes the overall verdict
                 }
             }
 
-            int score = testCases.isEmpty() ? 0 : (int) Math.round(100.0 * passed / testCases.size());
-            submission.setStatus(finalVerdict);
-            submission.setScore(score);
-            submission.setRuntimeMs(maxRuntimeMs);
-            submission.setJudgedAt(Instant.now());
-            submissionRepository.save(submission);
+            int score = job.testCases().isEmpty() ? 0
+                    : (int) Math.round(100.0 * passed / job.testCases().size());
 
-            updateProgress(submission, finalVerdict == SubmissionStatus.ACCEPTED);
+            persistence.saveResults(submissionId, finalVerdict, score, maxRuntimeMs, outcomes); // short tx
 
         } catch (Exception e) {
             log.error("Judging failed for submission {}", submissionId, e);
-            submission.setStatus(SubmissionStatus.INTERNAL_ERROR);
-            submission.setErrorMessage(truncate(e.getMessage(), 2000));
-            submission.setJudgedAt(Instant.now());
-            submissionRepository.save(submission);
+            safeMarkError(submissionId, truncate(e.getMessage(), 2000));
         } finally {
             if (workDir != null) {
                 deleteRecursively(workDir);
@@ -157,20 +145,13 @@ public class JudgeService {
         }
     }
 
-    private void updateProgress(Submission submission, boolean solved) {
-        Long userId = submission.getUser().getId();
-        Long problemId = submission.getProblem().getId();
-        var progress = userProgressRepository.findByUserIdAndProblemId(userId, problemId)
-                .orElseGet(() -> UserProgress.builder()
-                        .user(submission.getUser())
-                        .problem(submission.getProblem())
-                        .build());
-        progress.setAttempts(progress.getAttempts() + 1);
-        if (solved && !progress.isSolved()) {
-            progress.setSolved(true);
-            progress.setBestSubmissionId(submission.getId());
+    /** Move the submission to a terminal error state without letting a second failure escape. */
+    private void safeMarkError(Long submissionId, String message) {
+        try {
+            persistence.markInternalError(submissionId, message);
+        } catch (Exception e) {
+            log.error("Also failed to mark submission {} as INTERNAL_ERROR", submissionId, e);
         }
-        userProgressRepository.save(progress);
     }
 
     /**
