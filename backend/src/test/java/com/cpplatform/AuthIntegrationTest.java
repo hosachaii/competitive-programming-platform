@@ -81,8 +81,40 @@ class AuthIntegrationTest {
                 .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
 
+    @Test
+    void loginWithWrongPasswordIsUnauthorized() throws Exception {
+        mvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(new RegisterBody("wrongpw@test.local", "wrongpw", PASSWORD))))
+                .andExpect(status().isOk());
+
+        mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(new LoginBody("wrongpw@test.local", "not-the-password"))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Invalid email or password"));
+    }
+
+    @Test
+    void oversizedSourceCodeIsRejected() throws Exception {
+        // register + submit an over-64KB payload -> 400 validation error
+        MvcResult reg = mvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(new RegisterBody("big@test.local", "bigsrc", PASSWORD))))
+                .andExpect(status().isOk()).andReturn();
+        String access = om.readTree(reg.getResponse().getContentAsString()).get("accessToken").asText();
+        String huge = "x".repeat(70 * 1024);
+        mvc.perform(post("/api/submissions")
+                        .header("Authorization", "Bearer " + access)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(new SubmitBody(1L, "CPP", huge))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation failed"));
+    }
+
     // minimal request bodies for serialization
     record RegisterBody(String email, String username, String password) {}
     record LoginBody(String email, String password) {}
     record RefreshBody(String refreshToken) {}
+    record SubmitBody(Long problemId, String language, String sourceCode) {}
 }

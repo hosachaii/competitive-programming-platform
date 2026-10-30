@@ -9,6 +9,7 @@ import com.cpplatform.repository.TestCaseRepository;
 import com.cpplatform.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,8 +37,12 @@ public class DataSeeder implements CommandLineRunner {
     private final TestCaseRepository testCaseRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private static final String ADMIN_EMAIL = "admin@cp.local";
-    private static final String ADMIN_PASSWORD = "admin12345";
+    // Overridable for non-local use; defaults are dev-only well-known values.
+    @Value("${app.seed.admin-email:admin@cp.local}")
+    private String adminEmail;
+
+    @Value("${app.seed.admin-password:admin12345}")
+    private String adminPassword;
 
     @Override
     @Transactional
@@ -47,14 +52,14 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedAdmin() {
-        if (userRepository.existsByEmail(ADMIN_EMAIL)) return;
+        if (userRepository.existsByEmail(adminEmail)) return;
         userRepository.save(User.builder()
-                .email(ADMIN_EMAIL)
+                .email(adminEmail)
                 .username("admin")
-                .passwordHash(passwordEncoder.encode(ADMIN_PASSWORD))
+                .passwordHash(passwordEncoder.encode(adminPassword))
                 .role(Role.ADMIN)
                 .build());
-        log.info("Seeded dev admin: {} / {}", ADMIN_EMAIL, ADMIN_PASSWORD);
+        log.info("Seeded dev admin: {} / {}", adminEmail, adminPassword);
     }
 
     private void seedProblems() {
