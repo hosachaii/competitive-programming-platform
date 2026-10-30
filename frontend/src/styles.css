@@ -25,6 +25,7 @@ th, td { text-align: left; padding: 0.6rem; border-bottom: 1px solid #24262b; }
 .badge.MEDIUM { background: #4a3c14; color: #f0c26a; }
 .badge.HARD { background: #4a1e1e; color: #f08a8a; }
 .badge.ACCEPTED { background: #1e4620; color: #7ee38a; }
-.badge.WRONG_ANSWER, .badge.RUNTIME_ERROR, .badge.COMPILE_ERROR, .badge.TIME_LIMIT_EXCEEDED { background: #4a1e1e; color: #f08a8a; }
+.badge.WRONG_ANSWER, .badge.RUNTIME_ERROR, .badge.COMPILE_ERROR, .badge.TIME_LIMIT_EXCEEDED,
+.badge.MEMORY_LIMIT_EXCEEDED, .badge.OUTPUT_LIMIT_EXCEEDED, .badge.INTERNAL_ERROR { background: #4a1e1e; color: #f08a8a; }
 .badge.PENDING, .badge.RUNNING { background: #30333a; color: #cfd2d8; }
 form { display: flex; flex-direction: column; gap: 0.8rem; max-width: 400px; }

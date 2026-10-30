@@ -29,6 +29,13 @@ judge:
   docker-cpus: "1"
   docker-pids-limit: 64
   default-time-limit-seconds: 5
+  # Max bytes of stdout/stderr captured per run; a program that floods past this
+  # is killed and marked OUTPUT_LIMIT_EXCEEDED so it can't exhaust judge memory.
+  max-output-bytes: 65536
+
+submission:
+  # Minimum seconds between two submissions from the same user (HTTP 429 otherwise).
+  rate-limit-seconds: ${SUBMISSION_RATE_LIMIT_SECONDS:5}
 
 logging:
   level:

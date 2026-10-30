@@ -88,6 +88,14 @@ def expected(lang, scenario):
         return {"COMPILE_ERROR", "RUNTIME_ERROR"}
     return base
 
+def new_user():
+    email = f"smoke_{int(time.time()*1000)}_{random.randint(1000,9999)}@test.local"
+    st, body = http("POST", "/api/auth/register",
+                    {"email": email, "username": f"sm{random.randint(1000,999999)}", "password": "password123"})
+    if st != 200 or not isinstance(body, dict):
+        return None
+    return body["accessToken"]
+
 def poll(sid, token, timeout=90):
     deadline = time.time() + timeout
     last = None
@@ -154,18 +162,32 @@ pid = detail["id"]
 # are reaped after each case (see cleanup_orphans).
 scenarios = ["correct","wrong","loop","ce","re"]
 langs = ["CPP","PYTHON","JAVA"]
+# A fresh user is used per submission so the per-user rate limit never throttles
+# the verdict matrix (the rate limit itself is checked separately below).
 print("-- submitting + polling each case sequentially (loop cases take a few seconds) --")
 for lang in langs:
     for sc in scenarios:
         exp = expected(lang, sc)
+        utok = new_user() or token
         st, body = http("POST", "/api/submissions",
-                        {"problemId": pid, "language": lang, "sourceCode": SRC[lang][sc]}, token=token)
+                        {"problemId": pid, "language": lang, "sourceCode": SRC[lang][sc]}, token=utok)
         if st != 200 or not isinstance(body, dict):
             check(f"{lang}/{sc} -> verdict", False, f"submit HTTP {st}: {body}")
             continue
-        verdict = poll(body["id"], token)
+        verdict = poll(body["id"], utok)
         check(f"{lang}/{sc} -> verdict", verdict in exp, f"got {verdict}, expected {sorted(exp)}")
         cleanup_orphans()
+
+# 6) Rate limiting: two submissions in quick succession from one user -> 429
+rtok = new_user()
+if rtok:
+    st1, _ = http("POST", "/api/submissions",
+                  {"problemId": pid, "language": "PYTHON", "sourceCode": PYTHON["correct"]}, token=rtok)
+    st2, body2 = http("POST", "/api/submissions",
+                  {"problemId": pid, "language": "PYTHON", "sourceCode": PYTHON["correct"]}, token=rtok)
+    msg = body2.get("error") if isinstance(body2, dict) else ""
+    check("rate-limit (2nd submit -> 429)", st1 == 200 and st2 == 429, f"first={st1}, second={st2} ({msg})")
+    cleanup_orphans()
 
 npass = sum(1 for _,ok,_ in results if ok)
 ntot = len(results)

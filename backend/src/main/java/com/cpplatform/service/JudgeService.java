@@ -10,12 +10,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,13 +27,15 @@ import java.util.concurrent.TimeUnit;
  * (plus one compile step for compiled languages).
  *
  * Isolation: --network=none, memory/cpu/pids caps, read-only root fs, non-root user
- * inside the runner image, wall-clock `timeout` as a backstop.
+ * inside the runner image, wall-clock timeout as a backstop.
  *
- * Transaction model: this method is {@code @Async} but NOT {@code @Transactional}.
- * All database writes go through {@link JudgePersistence}, a separate bean whose
- * methods each open a short transaction. That keeps the (slow) compile/run steps
- * from holding a database transaction — and a pooled connection — open for their
- * whole duration. See {@link JudgePersistence} for why it is a separate bean.
+ * Robustness (Phase 3): every container gets a unique --name so a timed-out or
+ * runaway container can be force-removed (no orphans); stdout/stderr are drained
+ * concurrently and capped so a flood can't exhaust memory; OOM kills (exit 137) and
+ * output floods map to MLE / OLE respectively.
+ *
+ * Transaction model: this method is {@code @Async} but NOT {@code @Transactional};
+ * all DB writes go through the short transactions in {@link JudgePersistence}.
  */
 @Service
 @Slf4j
@@ -51,7 +56,16 @@ public class JudgeService {
     @Value("${judge.docker-pids-limit}")
     private String dockerPidsLimit;
 
-    private record RunResult(String stdout, String stderr, int exitCode, boolean timedOut, long wallMs) {}
+    @Value("${judge.max-output-bytes}")
+    private int maxOutputBytes;
+
+    /**
+     * Result of one container run. {@code outputExceeded} means the program wrote
+     * more than the cap (we killed it); {@code outOfMemory} means the kernel OOM-killed
+     * it (exit 137 with no wall-clock timeout).
+     */
+    record RunResult(String stdout, String stderr, int exitCode,
+                     boolean timedOut, boolean outOfMemory, boolean outputExceeded, long wallMs) {}
 
     @Async
     public void judgeAsync(Long submissionId) {
@@ -80,12 +94,13 @@ public class JudgeService {
             }
             Files.writeString(workDir.resolve(cfg.sourceFileName()), job.sourceCode(), StandardCharsets.UTF_8);
 
-            // --- Compile step (no-op for interpreted languages without a compile command) ---
+            // --- Compile step (C++/Java; Python byte-compile for syntax checking) ---
             if (cfg.needsCompile()) {
                 RunResult compileResult = runDocker(cfg.image(), workDir,
-                        cfg.compileCommand(), 20, /*networkNone*/ true, /*compileStep*/ true);
+                        cfg.compileCommand(), 20, /*compileStep*/ true);
                 if (compileResult.exitCode() != 0) {
-                    persistence.recordCompileError(submissionId, truncate(compileResult.stderr(), 4000));
+                    String msg = compileResult.timedOut() ? "Compilation timed out" : compileResult.stderr();
+                    persistence.recordCompileError(submissionId, truncate(msg, 4000));
                     return;
                 }
             }
@@ -101,26 +116,17 @@ public class JudgeService {
                 Files.writeString(workDir.resolve("input.txt"), tc.input(), StandardCharsets.UTF_8);
 
                 RunResult run = runDocker(cfg.image(), workDir, cfg.runCommand(),
-                        (int) Math.ceil(timeLimitSec) + 2, true, false);
+                        (int) Math.ceil(timeLimitSec) + 2, false);
 
-                SubmissionStatus verdict;
-                if (run.timedOut()) {
-                    verdict = SubmissionStatus.TIME_LIMIT_EXCEEDED;
-                } else if (run.exitCode() != 0) {
-                    verdict = SubmissionStatus.RUNTIME_ERROR;
-                } else if (normalize(run.stdout()).equals(normalize(tc.expectedOutput()))) {
-                    verdict = SubmissionStatus.ACCEPTED;
-                    passed++;
-                } else {
-                    verdict = SubmissionStatus.WRONG_ANSWER;
-                }
+                SubmissionStatus verdict = mapVerdict(run, tc.expectedOutput());
+                if (verdict == SubmissionStatus.ACCEPTED) passed++;
 
                 maxRuntimeMs = Math.max(maxRuntimeMs, (int) run.wallMs());
 
                 if (verdict != SubmissionStatus.ACCEPTED) {
-                    log.warn("Submission {} testCase {} verdict={} exitCode={} timedOut={} stderr=[{}] stdout=[{}]",
+                    log.warn("Submission {} testCase {} verdict={} exitCode={} timedOut={} oom={} outExceeded={} stderr=[{}]",
                             submissionId, tc.id(), verdict, run.exitCode(), run.timedOut(),
-                            truncate(run.stderr(), 500), truncate(run.stdout(), 200));
+                            run.outOfMemory(), run.outputExceeded(), truncate(run.stderr(), 500));
                 }
 
                 outcomes.add(new TcOutcome(tc.id(), verdict, (int) run.wallMs(), null));
@@ -140,9 +146,25 @@ public class JudgeService {
             safeMarkError(submissionId, truncate(e.getMessage(), 2000));
         } finally {
             if (workDir != null) {
-                deleteRecursively(workDir);
+                deleteRecursively(workDir); // per-submission workspace cleanup
             }
         }
+    }
+
+    /**
+     * Maps a container run to a verdict. Order matters: a wall-clock timeout wins,
+     * then an output flood (we killed it), then an OOM kill, then any other non-zero
+     * exit is a runtime error; a clean exit is AC or WA by output comparison.
+     * Package-private + static so it can be unit-tested directly.
+     */
+    static SubmissionStatus mapVerdict(RunResult run, String expectedOutput) {
+        if (run.timedOut())       return SubmissionStatus.TIME_LIMIT_EXCEEDED;
+        if (run.outputExceeded()) return SubmissionStatus.OUTPUT_LIMIT_EXCEEDED;
+        if (run.outOfMemory())    return SubmissionStatus.MEMORY_LIMIT_EXCEEDED;
+        if (run.exitCode() != 0)  return SubmissionStatus.RUNTIME_ERROR;
+        return OutputComparator.matches(run.stdout(), expectedOutput)
+                ? SubmissionStatus.ACCEPTED
+                : SubmissionStatus.WRONG_ANSWER;
     }
 
     /** Move the submission to a terminal error state without letting a second failure escape. */
@@ -155,16 +177,21 @@ public class JudgeService {
     }
 
     /**
-     * Runs `docker run` with hard isolation flags. compileStep gets a slightly larger
-     * timeout and doesn't feed stdin; a normal run step pipes input.txt as stdin.
+     * Runs `docker run` with hard isolation flags under a unique container name.
+     * stdout/stderr are drained on their own threads (so a large writer can't
+     * deadlock against a full pipe buffer) and capped at maxOutputBytes; if the cap
+     * is exceeded the container is killed and the run is flagged OLE. On any forced
+     * kill (timeout or flood) the container is force-removed so nothing is orphaned.
      */
     private RunResult runDocker(String image, Path workDir, List<String> command,
-                                 int timeoutSeconds, boolean networkNone, boolean compileStep) throws IOException, InterruptedException {
+                                int timeoutSeconds, boolean compileStep) throws IOException, InterruptedException {
 
-        List<String> cmd = new java.util.ArrayList<>(List.of(
+        String containerName = "judge-" + UUID.randomUUID();
+        List<String> cmd = new ArrayList<>(List.of(
                 "docker", "run", "--rm",
+                "--name", containerName,
                 "-i",
-                networkNone ? "--network=none" : "--network=bridge",
+                "--network=none",
                 "--memory=" + dockerMemory,
                 "--memory-swap=" + dockerMemory,
                 "--cpus=" + dockerCpus,
@@ -181,12 +208,23 @@ public class JudgeService {
         pb.redirectErrorStream(false);
         Process process = pb.start();
 
-        // pipe stdin from input.txt for run steps; nothing for compile steps
+        // Drain both streams concurrently with a hard cap; kill the container if a
+        // stream floods past the cap.
+        StreamGobbler out = new StreamGobbler(process.getInputStream(), maxOutputBytes,
+                () -> forceKill(process, containerName));
+        StreamGobbler err = new StreamGobbler(process.getErrorStream(), maxOutputBytes,
+                () -> forceKill(process, containerName));
+        out.start();
+        err.start();
+
+        // Feed stdin (test input) for run steps; compile steps get none.
         if (!compileStep) {
             Path input = workDir.resolve("input.txt");
             if (Files.exists(input)) {
                 try (var os = process.getOutputStream()) {
                     Files.copy(input, os);
+                } catch (IOException ignored) {
+                    // program may have exited/closed stdin before reading it all; fine
                 }
             } else {
                 process.getOutputStream().close();
@@ -196,23 +234,46 @@ public class JudgeService {
         }
 
         long start = System.currentTimeMillis();
-        String stdout;
-        String stderr;
         boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
         long wallMs = System.currentTimeMillis() - start;
 
         if (!finished) {
-            process.destroyForcibly();
-            return new RunResult("", "timed out", -1, true, wallMs);
+            forceKill(process, containerName);   // kill CLI + force-remove the container
+            out.join(2000);
+            err.join(2000);
+            return new RunResult("", "timed out", -1, true, false, false, wallMs);
         }
 
-        stdout = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        stderr = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-        return new RunResult(stdout, stderr, process.exitValue(), false, wallMs);
+        out.join(2000);
+        err.join(2000);
+        int exitCode = process.exitValue();
+        boolean exceeded = out.capExceeded() || err.capExceeded();
+        if (exceeded) {
+            // we killed the container because it flooded output; make sure it's gone
+            forceRemove(containerName);
+        }
+        boolean oom = !exceeded && exitCode == 137; // 128 + SIGKILL, i.e. cgroup OOM kill
+
+        return new RunResult(out.text(), err.text(), exitCode, false, oom, exceeded, wallMs);
     }
 
-    private String normalize(String s) {
-        return s == null ? "" : s.strip().replaceAll("[ \\t]+\\n", "\n").replaceAll("\\r\\n", "\n");
+    /** Kill the docker CLI process and force-remove the container it launched. */
+    private void forceKill(Process process, String containerName) {
+        process.destroyForcibly();
+        forceRemove(containerName);
+    }
+
+    /** `docker rm -f` the named container; best-effort, so already-gone is fine. */
+    private void forceRemove(String containerName) {
+        try {
+            new ProcessBuilder("docker", "rm", "-f", containerName)
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
+                    .start()
+                    .waitFor(5, TimeUnit.SECONDS);
+        } catch (IOException | InterruptedException ignored) {
+            if (Thread.currentThread().isInterrupted()) Thread.currentThread().interrupt();
+        }
     }
 
     private String truncate(String s, int max) {
@@ -226,5 +287,50 @@ public class JudgeService {
                 try { Files.deleteIfExists(p); } catch (IOException ignored) {}
             });
         } catch (IOException ignored) {}
+    }
+
+    /**
+     * Reads a stream to completion, keeping at most {@code cap} bytes. If the stream
+     * exceeds the cap it flags {@code capExceeded} and invokes {@code onExceed} once
+     * (used to kill the container), then keeps draining so the writer never blocks.
+     */
+    private static final class StreamGobbler extends Thread {
+        private final InputStream in;
+        private final int cap;
+        private final Runnable onExceed;
+        private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        private volatile boolean exceeded = false;
+
+        StreamGobbler(InputStream in, int cap, Runnable onExceed) {
+            this.in = in;
+            this.cap = cap;
+            this.onExceed = onExceed;
+            setDaemon(true);
+        }
+
+        @Override
+        public void run() {
+            byte[] chunk = new byte[8192];
+            int n;
+            try {
+                while ((n = in.read(chunk)) != -1) {
+                    int remaining = cap - buf.size();
+                    if (remaining > 0) {
+                        buf.write(chunk, 0, Math.min(n, remaining));
+                    }
+                    if (!exceeded && buf.size() >= cap) {
+                        exceeded = true;
+                        try { onExceed.run(); } catch (Exception ignored) {}
+                    }
+                    // keep reading (and discarding beyond the cap) so the writer can't block
+                }
+            } catch (IOException ignored) {
+                // stream closed as the process died; nothing more to read
+            }
+        }
+
+        boolean capExceeded() { return exceeded; }
+
+        String text() { return buf.toString(StandardCharsets.UTF_8); }
     }
 }

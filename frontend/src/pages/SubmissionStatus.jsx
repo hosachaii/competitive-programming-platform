@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import client from '../api/client';
 
 const TERMINAL = ['ACCEPTED', 'WRONG_ANSWER', 'TIME_LIMIT_EXCEEDED', 'MEMORY_LIMIT_EXCEEDED',
-                   'RUNTIME_ERROR', 'COMPILE_ERROR', 'INTERNAL_ERROR'];
+                   'OUTPUT_LIMIT_EXCEEDED', 'RUNTIME_ERROR', 'COMPILE_ERROR', 'INTERNAL_ERROR'];
 
 export default function SubmissionStatus() {
   const { id } = useParams();
@@ -38,7 +38,12 @@ export default function SubmissionStatus() {
       <div className="card">
         <p>Score: {submission.score}%</p>
         {submission.runtimeMs != null && <p>Runtime: {submission.runtimeMs} ms</p>}
-        {submission.errorMessage && <pre style={{ background: '#0f1115', padding: '0.5rem', color: '#f08a8a' }}>{submission.errorMessage}</pre>}
+        {submission.errorMessage && (
+          <>
+            <h4>{submission.status === 'COMPILE_ERROR' ? 'Compiler output' : 'Details'}</h4>
+            <pre style={{ background: '#0f1115', padding: '0.5rem', color: '#f08a8a', whiteSpace: 'pre-wrap', overflowX: 'auto' }}>{submission.errorMessage}</pre>
+          </>
+        )}
       </div>
       {submission.results?.length > 0 && (
         <div className="card">

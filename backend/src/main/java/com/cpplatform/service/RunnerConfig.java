@@ -25,11 +25,14 @@ public record RunnerConfig(
                     List.of("g++", "-O2", "-o", "sol", "solution.cpp"),
                     List.of("./sol")
             );
+            // Python is interpreted, but we run a byte-compile pass first so that a
+            // syntax error is reported as a COMPILE_ERROR (like C++/Java) instead of
+            // surfacing as a runtime failure on the first test case.
             case PYTHON -> new RunnerConfig(
                     "judge-runner-python",
                     "solution.py",
-                    false,
-                    List.of(),
+                    true,
+                    List.of("python3", "-m", "py_compile", "solution.py"),
                     List.of("python3", "solution.py")
             );
             case JAVA -> new RunnerConfig(
