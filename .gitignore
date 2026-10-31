@@ -12,3 +12,16 @@ frontend/dist/
 
 # Local env overrides
 .env
+
+# LaTeX build artifacts
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.fls
+report/*.fdb_latexmk
+report/build*.log
+# Playwright / node for diagrams
+report/diagrams/node_modules/
+report/diagrams/package*.json
+report/diagrams/demo_data.json

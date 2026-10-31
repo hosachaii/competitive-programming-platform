@@ -1,0 +1,31 @@
+// Submission lifecycle, from Submit click to verdict (sequence of participants).
+// Render: dot -Tpng judge_lifecycle.dot -o ../images/judge_lifecycle.png
+digraph lifecycle {
+  rankdir=TB;
+  bgcolor="white";
+  graph [fontname="Helvetica", fontsize=12, nodesep=0.35, ranksep=0.45];
+  node  [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="white", color="black"];
+  edge  [fontname="Helvetica", fontsize=9, color="black"];
+
+  s1 [label="ProblemDetail.jsx\nPOST /api/submissions  { problemId, language, sourceCode }"];
+  s2 [label="JwtAuthFilter\nvalidates the access token, sets the authenticated user"];
+  s3 [label="SubmissionController.submit\n@Valid request (source <= 64 KB)"];
+  s4 [label="SubmissionService.submit\nrate-limit check (429 if too soon),\nsave Submission as PENDING, fire judgeAsync()"];
+  s5 [label="JudgePersistence.beginJudging  [short tx]\nmark RUNNING, load source + time limit + test cases"];
+  s6 [label="JudgeService  (@Async, no tx held)\nwrite source to per-submission workspace"];
+  s7 [label="ContainerRunner.run  (compile step)\nC++/Java compile, Python py_compile"];
+  s8 [label="compile failed?\nrecordCompileError [short tx], stop", shape=box, style="rounded,filled", fillcolor="gray92"];
+  s9 [label="ContainerRunner.run  (one sandbox per test case)\ncapture stdout/stderr (64 KB cap)"];
+  s10 [label="JudgeService.mapVerdict\nTLE / OLE / MLE / RE / AC / WA  (OutputComparator)"];
+  s11 [label="JudgePersistence.saveResults  [short tx]\nper-test rows, overall verdict, score, UserProgress"];
+  s12 [label="first solve? LeaderboardService.onFirstSolve\nRedis ZINCRBY (outside tx)"];
+  s13 [label="SubmissionStatus.jsx\npolls GET /api/submissions/{id} every 1.5 s until terminal"];
+
+  s1 -> s2 -> s3 -> s4 -> s5 -> s6 -> s7;
+  s7 -> s8 [label="non-zero exit"];
+  s7 -> s9 [label="ok"];
+  s9 -> s10 -> s11 -> s12;
+  s9 -> s9 [label="next test case", style=dashed];
+  s12 -> s13 [style=dashed, label="verdict stored"];
+  s4 -> s13 [label="returns immediately", style=dashed, constraint=false];
+}

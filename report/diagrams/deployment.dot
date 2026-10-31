@@ -1,0 +1,35 @@
+// Docker Compose deployment topology.
+// Render: dot -Tpng deployment.dot -o ../images/deployment.png
+digraph deployment {
+  rankdir=LR;
+  bgcolor="white";
+  graph [fontname="Helvetica", fontsize=12, nodesep=0.4, ranksep=0.8];
+  node  [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="white", color="black"];
+  edge  [fontname="Helvetica", fontsize=9, color="black"];
+
+  subgraph cluster_compose {
+    label="docker compose (single host)";
+    style="rounded,filled"; fillcolor="gray95"; color="black"; fontsize=12;
+
+    frontend [label="frontend\nnginx :3000\n(static SPA + /api proxy)"];
+    backend  [label="backend\nSpring Boot :8080\nmounts /var/run/docker.sock"];
+    postgres [label="postgres :5433 -> 5432\nvolume: pgdata", shape=cylinder];
+    redis    [label="redis :6379", shape=cylinder];
+
+    frontend -> backend [label="/api"];
+    backend  -> postgres [label="JDBC"];
+    backend  -> redis [label="leaderboard"];
+  }
+
+  subgraph cluster_host {
+    label="host Docker daemon";
+    style="rounded,filled"; fillcolor="gray92"; color="black"; fontsize=12;
+    runners [label="judge-runner-cpp\njudge-runner-java\njudge-runner-python"];
+    workspace [label="judge workspace\n(bind-mounted per submission)", shape=folder];
+  }
+
+  user [label="User browser", shape=oval, style=filled, fillcolor="white"];
+  user -> frontend [label=":3000"];
+  backend -> runners [label="docker run\nper compile / test case"];
+  runners -> workspace [label="/box (read-write)"];
+}

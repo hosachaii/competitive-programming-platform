@@ -1,0 +1,27 @@
+// Entity-relationship diagram of the persistence model.
+// Render: dot -Tpng er_diagram.dot -o ../images/er_diagram.png
+digraph er {
+  rankdir=LR;
+  bgcolor="white";
+  graph [fontname="Helvetica", fontsize=12, nodesep=0.4, ranksep=0.9];
+  node  [fontname="Helvetica", fontsize=10, shape=record, style="filled", fillcolor="white", color="black"];
+  edge  [fontname="Helvetica", fontsize=9, color="black", arrowhead=vee];
+
+  User          [label="{User|id : Long\lemail : String (unique)\lusername : String\lpasswordHash : String\lrole : Role\lcreatedAt : Instant\l}"];
+  Problem       [label="{Problem|id : Long\ltitle : String\lslug : String (unique)\ldifficulty : Difficulty\lstatement : text\ltimeLimitMs : Integer\lmemoryLimitMb : Integer\l}"];
+  Tag           [label="{Tag|id : Long\lname : String (unique)\l}"];
+  TestCase      [label="{TestCase|id : Long\linput : text\lexpectedOutput : text\lisPublic : boolean\lweight : Integer\l}"];
+  Submission    [label="{Submission|id : Long\llanguage : Language\lsourceCode : text\lstatus : SubmissionStatus\lscore : Integer\lruntimeMs : Integer\lsubmittedAt : Instant\l}"];
+  SubmissionResult [label="{SubmissionResult|id : Long\lverdict : SubmissionStatus\lruntimeMs : Integer\lmemoryKb : Integer\l}"];
+  UserProgress  [label="{UserProgress|id : Long\lsolved : boolean\lbestSubmissionId : Long\lattempts : Integer\l}"];
+
+  // relationships (cardinality in labels)
+  User       -> Submission      [label="1..*  submits", dir=forward];
+  Problem    -> Submission      [label="1..*  for", dir=forward];
+  Problem    -> TestCase        [label="1..*  has", dir=forward];
+  Problem    -> Tag             [label="*..*  tagged", dir=both, arrowtail=vee];
+  Submission -> SubmissionResult[label="1..*  yields", dir=forward];
+  TestCase   -> SubmissionResult[label="1..*  judged by", dir=forward];
+  User       -> UserProgress    [label="1..*", dir=forward];
+  Problem    -> UserProgress    [label="1..*", dir=forward];
+}

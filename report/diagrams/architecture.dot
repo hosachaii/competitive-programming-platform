@@ -1,0 +1,49 @@
+// System architecture of the competitive programming platform.
+// Render: dot -Tpng architecture.dot -o ../images/architecture.png
+digraph architecture {
+  rankdir=LR;
+  bgcolor="white";
+  graph [fontname="Helvetica", fontsize=12, nodesep=0.35, ranksep=0.7];
+  node  [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="white", color="black"];
+  edge  [fontname="Helvetica", fontsize=10, color="black"];
+
+  client [label="Browser\n(React SPA, Vite,\nMonaco editor)"];
+
+  nginx [label="nginx :3000\nserves SPA,\nproxies /api"];
+
+  subgraph cluster_backend {
+    label="Spring Boot backend  :8080";
+    style="rounded,filled"; fillcolor="gray95"; color="black"; fontsize=12;
+
+    controllers [label="Controllers\nAuth / Problem /\nSubmission / Leaderboard / User"];
+    security    [label="Security\nJwtAuthFilter, JwtService,\nSecurityConfig (roles)"];
+    services    [label="Services\nAuthService, ProblemService,\nSubmissionService"];
+    judge       [label="Judge\nJudgeService (@Async),\nJudgePersistence (tx),\nContainerRunner"];
+    repos       [label="Repositories\n(Spring Data JPA)"];
+
+    controllers -> services;
+    controllers -> judge [style=invis];
+    security -> controllers [label="authenticates", constraint=false];
+    services -> repos;
+    judge -> repos;
+    services -> judge [label="submit()"];
+  }
+
+  postgres [label="PostgreSQL\n(source of truth)", shape=cylinder, style=filled, fillcolor="white"];
+  redis    [label="Redis\n(leaderboard cache)", shape=cylinder, style=filled, fillcolor="white"];
+
+  subgraph cluster_sandbox {
+    label="Host Docker daemon";
+    style="rounded,filled"; fillcolor="gray95"; color="black"; fontsize=12;
+    daemon [label="docker run (per compile\nand per test case)"];
+    runners [label="judge-runner-{cpp,java,python}\n--network=none, mem/cpu/pids caps,\nread-only rootfs, non-root user"];
+    daemon -> runners;
+  }
+
+  client  -> nginx [label="HTTPS"];
+  nginx   -> controllers [label="/api/*  (JWT)"];
+  repos   -> postgres;
+  judge   -> redis [label="ZINCRBY /\nZREVRANGE"];
+  services -> redis [style=invis];
+  judge   -> daemon [label="launches\nsandboxes"];
+}

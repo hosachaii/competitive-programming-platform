@@ -1,0 +1,42 @@
+// JWT access + refresh token flow (landscape layout).
+// Render: dot -Tpng jwt_auth_flow.dot -o ../images/jwt_auth_flow.png
+digraph jwt {
+  rankdir=LR;
+  bgcolor="white";
+  graph [fontname="Helvetica", fontsize=12, nodesep=0.3, ranksep=0.55];
+  node  [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="white", color="black"];
+  edge  [fontname="Helvetica", fontsize=9, color="black"];
+
+  subgraph cluster_login {
+    label="1. Login / Register";
+    style="rounded,filled"; fillcolor="gray95"; color="black";
+    l1 [label="Login page posts\nemail + password\nto /api/auth/login"];
+    l2 [label="AuthService authenticates\nvia AuthenticationManager\n(BCrypt check)"];
+    l3 [label="JwtService issues two\nHMAC-signed tokens:\naccess (15 min),\nrefresh (7 days)"];
+    l4 [label="Browser stores both\ntokens in localStorage\n(AuthContext)"];
+    l1 -> l2 -> l3 -> l4;
+  }
+
+  subgraph cluster_req {
+    label="2. Authenticated request";
+    style="rounded,filled"; fillcolor="gray95"; color="black";
+    r1 [label="axios attaches\nAuthorization:\nBearer <access>"];
+    r2 [label="JwtAuthFilter verifies\nsignature + expiry,\nsets SecurityContext"];
+    r3 [label="Controller runs;\nroles enforced by\nSecurityConfig"];
+    r1 -> r2 -> r3;
+  }
+
+  subgraph cluster_refresh {
+    label="3. Access token expired";
+    style="rounded,filled"; fillcolor="gray95"; color="black";
+    f1 [label="API returns 401"];
+    f2 [label="axios interceptor posts\nrefresh token to\n/api/auth/refresh"];
+    f3 [label="AuthService.refresh\nvalidates type=refresh,\nissues new access token"];
+    f4 [label="Original request\nretried once"];
+    f1 -> f2 -> f3 -> f4;
+  }
+
+  l4 -> r1 [label="later calls", constraint=false];
+  r3 -> f1 [label="token expires", style=dashed, constraint=false];
+  f4 -> r2 [label="retry", style=dashed, constraint=false];
+}
