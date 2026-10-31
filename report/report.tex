@@ -6,9 +6,22 @@
 \usepackage{parskip}
 \usepackage{float}
 \usepackage{array}
+\usepackage{tabularx}
 \usepackage{listings}
+\usepackage{placeins}
+\usepackage{rotating}
 \geometry{left=1in, right=1in, top=1in, bottom=1in}
 \graphicspath{{images/}}
+
+% Let figures share pages with text and pack float pages more fully, so a short
+% figure does not sit alone on an otherwise blank page.
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.7}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
 
 % Clean, black-and-white monospace style for the occasional code listing.
 \lstset{
@@ -70,7 +83,7 @@
     \begin{spacing}{1.3}
         \Large
         \textbf{Internal Mentor:} Dr.\ Pratiksha Deshmukh\\[10pt]
-        \textbf{External Mentor:} Ms.\ Neela Santosh Kumar, CodTech IT Solutions Pvt.\ Ltd.
+        \textbf{External Mentor:} Neela Santhosh Kumar, Human Resources \& Academic Head, CodTech IT Solutions Pvt.\ Ltd.
     \end{spacing}
 
     \vfill
@@ -118,7 +131,7 @@ This internship was carried out at CodTech IT Solutions Pvt.\ Ltd., an informati
 
 The internship programme is designed to give students exposure to the full software development process, from understanding requirements and designing a system to implementing, testing and documenting it. Interns are encouraged to use current tools and frameworks, to follow good engineering practices and to take ownership of a complete piece of work rather than a small isolated task. This approach suited the present project well, since building a competitive programming platform required designing and implementing a complete system spanning the frontend, the backend, the database and the execution environment.
 
-The work in this report was carried out under the external mentorship of Ms.\ Neela Santosh Kumar from CodTech IT Solutions, who provided direction on the project requirements, and under the internal guidance of Dr.\ Pratiksha Deshmukh from COEP Technological University. The combination of an industry defined project and academic supervision provided a useful setting for applying theoretical knowledge to a practical software engineering problem.
+The work in this report was carried out under the external mentorship of Neela Santhosh Kumar, Human Resources \& Academic Head at CodTech IT Solutions, who provided direction on the project requirements, and under the internal guidance of Dr.\ Pratiksha Deshmukh from COEP Technological University. The combination of an industry defined project and academic supervision provided a useful setting for applying theoretical knowledge to a practical software engineering problem.
 
 \chapter*{Scope of Work}
 \addcontentsline{toc}{chapter}{Scope of Work}
@@ -144,9 +157,9 @@ With the learning phase complete, the project began with a short requirement ana
 
 The architecture that emerged is a single Spring Boot application, or monolith, backed by PostgreSQL for persistent data and Redis for the leaderboard, with a React frontend served through nginx. A monolithic design was chosen deliberately because it is simpler to build, deploy and reason about at this scale, while the judging logic was kept in its own self contained group of classes so that it could be extracted into a separate service later if horizontal scaling were ever required. The backend launches a fresh, isolated Docker container for every compile step and every test case, using the host Docker daemon. Figure~\ref{fig:architecture} shows the overall structure and the main flow of requests through the system.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{architecture.png}
+  \includegraphics[width=0.68\textwidth]{architecture.png}
   \caption{High level architecture of the platform, showing the React frontend, the layered Spring Boot backend, the PostgreSQL and Redis data stores, and the sandbox containers launched on the host Docker daemon.}
   \label{fig:architecture}
 \end{figure}
@@ -156,24 +169,24 @@ The next activity was the design of the database schema, which was implemented a
 
 Submissions and their outcomes are modelled by three further entities. A Submission records the user, the problem, the language, the source code, the overall status and score, and timestamps. Each run of a submission against a single test case produces a SubmissionResult, which stores the per test verdict and runtime, so that the submission page can show a breakdown across all test cases. Finally, a UserProgress entity records, for each user and problem pair, whether the problem has been solved and how many attempts have been made, which is the information the leaderboard is built from. The relationships between these entities are shown in Figure~\ref{fig:er}.
 
-\begin{figure}[H]
+\begin{sidewaysfigure}
   \centering
-  \includegraphics[width=\textwidth]{er_diagram.png}
+  \includegraphics[width=0.92\textheight]{er_diagram.png}
   \caption{Entity relationship diagram of the persistence model, covering users and roles, problems, tags and test cases, and submissions, their per test results and user progress.}
   \label{fig:er}
-\end{figure}
+\end{sidewaysfigure}
 
 \section*{Authentication and Authorization}
 Authentication was implemented as a stateless scheme based on JSON Web Tokens, so that the server need not keep any session state. When a user registers or logs in, the {\ttfamily AuthService} verifies the credentials, hashing and checking passwords with BCrypt, and the {\ttfamily JwtService} issues two signed tokens. The access token is short lived, expiring after fifteen minutes, and carries the user's identity and role; it is attached to every API request. The refresh token is long lived, expiring after seven days, and is used only to obtain a new access token when the current one expires. Both tokens are signed with an HMAC key read from an environment variable.
 
 On each request, the {\ttfamily JwtAuthFilter} inspects the authorisation header, validates the token's signature and expiry and, if the token is valid, loads the user and places an authenticated principal into the security context for that request. Authorisation is then enforced declaratively in {\ttfamily SecurityConfig}, which permits public access to the authentication and read only problem endpoints while restricting problem creation, editing and deletion to administrators. A deliberate design point is that a missing or expired token results in an unauthorised response rather than a forbidden one, which allows the frontend to detect an expired token and refresh it automatically. The complete flow, including the automatic refresh that the frontend performs when it receives an unauthorised response, is shown in Figure~\ref{fig:jwt}.
 
-\begin{figure}[H]
+\begin{sidewaysfigure}
   \centering
-  \includegraphics[width=\textwidth]{jwt_auth_flow.png}
+  \includegraphics[width=0.92\textheight]{jwt_auth_flow.png}
   \caption{JSON Web Token flow, showing the issue of access and refresh tokens at login, their use on authenticated requests, and the automatic refresh when an access token has expired.}
   \label{fig:jwt}
-\end{figure}
+\end{sidewaysfigure}
 
 \section*{Problem Management APIs}
 With authentication in place, the problem management APIs were implemented. These provide the usual create, read, update and delete operations, with all write operations restricted to administrators and the read operations open to everyone so that visitors can browse the problem set. Each problem has a difficulty of easy, medium or hard, a set of free form tags and a list of test cases, and the problem listing supports pagination so that large problem sets can be browsed a page at a time.
@@ -188,9 +201,9 @@ A key property shared by all three images is that they create and switch to an u
 \section*{Judge Engine}
 The judge engine is the core of the platform and was the largest single activity of the internship. When a submission is received it is saved with a pending status and judging is triggered in the background. The judge first creates a private workspace directory for the submission and writes the source code into it. For the compiled languages a separate compile step is run, and if compilation fails the submission is marked as a compile error and the compiler output is stored so that it can be shown to the user. Python, although interpreted, is passed through a byte compilation step so that a syntax error is reported as a compile error in the same way as for the other languages. If compilation succeeds, the judge runs the program once for each test case, feeding the test input on standard input and capturing the output. The overall sequence, from the user pressing submit to the verdict appearing on the submission page, is shown in Figure~\ref{fig:lifecycle}.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.60\textwidth]{judge_lifecycle.png}
+  \includegraphics[width=\textwidth]{judge_lifecycle.png}
   \caption{Lifecycle of a submission, naming the main classes and methods involved from the submit request through compilation and per test execution to the stored verdict and the polling submission page.}
   \label{fig:lifecycle}
 \end{figure}
@@ -207,7 +220,7 @@ docker run --rm --name judge-<uuid> -i \
   <runner-image> <compile-or-run-command>
 \end{lstlisting}
 
-\begin{table}[H]
+\begin{table}[htbp]
   \centering
   \caption{The main sandbox flags and the misbehaviour each one prevents.}
   \label{tab:flags}
@@ -249,82 +262,82 @@ The leaderboard ranks users by the number of distinct problems they have solved.
 The sorted set is kept in step with the database in two ways. When a user solves a problem for the very first time, and only then, their score is incremented; a repeated correct submission for a problem that has already been solved does not change the score. This is driven by the user progress record, which distinguishes a first solve from a resubmission. To guard against the sorted set drifting out of step, for example after a restart, it is rebuilt from the database when the application starts, so that Redis always begins as an accurate cache of the authoritative data in PostgreSQL. The design also degrades gracefully: if Redis is unavailable, the leaderboard falls back to computing the ranking directly from PostgreSQL and logs a warning, with the Redis timeouts kept short so that the fallback is fast rather than leaving the request hanging.
 
 \section*{Frontend Development}
-The frontend was built as a React single page application using Vite as the build tool, with React Router for navigation and an Axios based API client. Authentication state is held in a context that stores the tokens and the current user and attaches the access token to every request; the same client transparently refreshes an expired access token and retries the original request. The login and registration pages are shown in Figure~\ref{fig:loginreg}.
+The frontend was built as a React single page application using Vite as the build tool, with React Router for navigation and an Axios based API client. Authentication state is held in a context that stores the tokens and the current user and attaches the access token to every request; the same client transparently refreshes an expired access token and retries the original request. The login and registration pages are shown in Figure~\ref{fig:login} and Figure~\ref{fig:register}.
 
-\begin{figure}[H]
-    \centering
-    \begin{minipage}{0.49\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{ui_login.png}
-    \end{minipage}
-    \begin{minipage}{0.49\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{ui_register.png}
-    \end{minipage}
-    \caption{The login page (left) and the registration page (right).}
-    \label{fig:loginreg}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{ui_login.png}
+  \caption{The login page.}
+  \label{fig:login}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{ui_register.png}
+  \caption{The registration page.}
+  \label{fig:register}
 \end{figure}
 
 The problem list presents the available problems with their difficulty and tags, and selecting a problem opens the problem detail page, which shows the statement, the public sample tests and a Monaco based code editor with language specific templates for C++, Java and Python. Figure~\ref{fig:list} and Figure~\ref{fig:detail} show these two pages.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.72\textwidth]{ui_problem_list.png}
+  \includegraphics[width=\textwidth]{ui_problem_list.png}
   \caption{The problem list, showing difficulty and tags for each problem.}
   \label{fig:list}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.70\textwidth]{ui_problem_detail.png}
+  \includegraphics[width=0.85\textwidth]{ui_problem_detail.png}
   \caption{The problem detail page, with the statement, sample tests and the Monaco code editor holding a candidate solution.}
   \label{fig:detail}
 \end{figure}
 
-After a solution is submitted, the user is taken to the submission status page, which polls the backend every one and a half seconds until a final verdict is reached and then displays the overall verdict together with a per test breakdown. Figure~\ref{fig:accepted} shows the page for an accepted submission, while Figure~\ref{fig:cetle} shows a submission that failed to compile and one that exceeded the time limit; in the compile error case the compiler output is shown directly so that the user can see what went wrong.
+After a solution is submitted, the user is taken to the submission status page, which polls the backend every one and a half seconds until a final verdict is reached and then displays the overall verdict together with a per test breakdown. Figure~\ref{fig:accepted} shows the page for an accepted submission, Figure~\ref{fig:ce} shows one that failed to compile (with the compiler output shown directly so the user can see what went wrong), and Figure~\ref{fig:tle} shows one that exceeded the time limit.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.68\textwidth]{ui_submission_accepted.png}
+  \includegraphics[width=\textwidth]{ui_submission_accepted.png}
   \caption{An accepted submission, showing the score, runtime and the per test result table.}
   \label{fig:accepted}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \begin{minipage}{0.49\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{ui_submission_compile_error.png}
-    \end{minipage}\hfill
-    \begin{minipage}{0.49\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{ui_submission_tle.png}
-    \end{minipage}
-    \caption{A submission that failed to compile, showing the compiler output (left), and a submission that exceeded the time limit (right).}
-    \label{fig:cetle}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{ui_submission_compile_error.png}
+  \caption{A submission that failed to compile, with the stored compiler output shown to the user.}
+  \label{fig:ce}
 \end{figure}
 
-The leaderboard page, shown in Figure~\ref{fig:leaderboard}, lists the top users by number of problems solved, and the administrator pages, shown in Figure~\ref{fig:admin}, allow problems to be created and edited, including their test cases and the public or hidden flag for each one.
-
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.70\textwidth]{ui_leaderboard.png}
+  \includegraphics[width=\textwidth]{ui_submission_tle.png}
+  \caption{A submission that exceeded the time limit.}
+  \label{fig:tle}
+\end{figure}
+
+The leaderboard page, shown in Figure~\ref{fig:leaderboard}, lists the top users by number of problems solved, and the administrator pages, shown in Figure~\ref{fig:adminnew} and Figure~\ref{fig:adminedit}, allow problems to be created and edited, including their test cases and the public or hidden flag for each one.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{ui_leaderboard.png}
   \caption{The leaderboard, ranking users by the number of problems solved.}
   \label{fig:leaderboard}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \begin{minipage}{0.49\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{ui_admin_new_problem.png}
-    \end{minipage}\hfill
-    \begin{minipage}{0.49\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{ui_admin_edit_problem.png}
-    \end{minipage}
-    \caption{The administrator pages for creating a new problem (left) and editing an existing problem (right), each with its test cases.}
-    \label{fig:admin}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{ui_admin_new_problem.png}
+  \caption{The administrator page for creating a new problem, shown through the first test case.}
+  \label{fig:adminnew}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{ui_admin_edit_problem.png}
+  \caption{The administrator page for editing an existing problem, shown through the first test case.}
+  \label{fig:adminedit}
 \end{figure}
 
 \section*{Containerisation and Deployment}
@@ -332,7 +345,7 @@ To make the platform easy to run and deploy, every part of it was containerised 
 
 The backend container is given access to the host Docker daemon so that it can launch sandbox containers, and the judge workspace directory is shared between the backend and the daemon so that the files written for a submission are visible inside its sandbox. This use of the host Docker socket is convenient for a single host deployment but is understood to be a significant privilege, since a container with access to the host Docker socket can effectively control the host; the recommendations chapter discusses safer alternatives for a production setting. The overall deployment topology is shown in Figure~\ref{fig:deployment}.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{deployment.png}
   \caption{Docker Compose deployment topology, showing the four services and the sandbox containers launched on the host Docker daemon.}
@@ -355,23 +368,25 @@ BUILD SUCCESS
 
 In addition to the automated tests, an end to end smoke test script was written to drive the whole system through its public API. For a single problem it submits, in each of the three languages, a correct solution, a wrong answer, an infinite loop, a program with a compile error and one that fails at runtime, and it then polls each submission to its final verdict and checks that the verdict is correct. The same script also verifies that a second submission made too quickly is rejected and that the leaderboard reflects the solved problems. Table~\ref{tab:smoke} shows the verdicts obtained for each language and scenario when the script was run against the running system; every case produced the expected verdict and all twenty two checks passed.
 
-\begin{table}[H]
+\begin{table}[htbp]
   \centering
-  \caption{Verdicts obtained by the end to end smoke test across the three languages.}
+  \caption{Verdicts obtained by the end to end smoke test across the three languages.
+  Verdicts are abbreviated: AC = Accepted, WA = Wrong Answer, TLE = Time Limit Exceeded,
+  CE = Compile Error, RE = Runtime Error.}
   \label{tab:smoke}
-  \begin{tabular}{|p{0.30\textwidth}|p{0.19\textwidth}|p{0.19\textwidth}|p{0.19\textwidth}|}
+  \begin{tabular}{|l|c|c|c|}
     \hline
     \textbf{Scenario} & \textbf{C++} & \textbf{Python} & \textbf{Java} \\
     \hline
-    Correct solution & Accepted & Accepted & Accepted \\
+    Correct solution & AC  & AC  & AC  \\
     \hline
-    Wrong answer & Wrong Answer & Wrong Answer & Wrong Answer \\
+    Wrong answer     & WA  & WA  & WA  \\
     \hline
-    Infinite loop & Time Limit Exceeded & Time Limit Exceeded & Time Limit Exceeded \\
+    Infinite loop    & TLE & TLE & TLE \\
     \hline
-    Compile error & Compile Error & Compile Error & Compile Error \\
+    Compile error    & CE  & CE  & CE  \\
     \hline
-    Runtime error & Runtime Error & Runtime Error & Runtime Error \\
+    Runtime error    & RE  & RE  & RE  \\
     \hline
   \end{tabular}
 \end{table}
@@ -440,11 +455,11 @@ The most important recommendation for a production setting concerns the executio
 \chapter*{Acknowledgements}
 \addcontentsline{toc}{chapter}{Acknowledgements}
 
-I would like to express my sincere thanks to my external mentor, Ms.\ Neela Santosh Kumar of CodTech IT Solutions Pvt.\ Ltd., for giving me the opportunity to work on this project and for her guidance on the requirements and direction of the work throughout the internship.
+I would like to express my sincere thanks to my external mentor, Neela Santhosh Kumar, Human Resources \& Academic Head at CodTech IT Solutions Pvt.\ Ltd., for giving me the opportunity to work on this project and for the guidance provided on the requirements and direction of the work throughout the internship.
 
 I am grateful to CodTech IT Solutions Pvt.\ Ltd.\ for providing a well structured internship programme and the opportunity to work on a complete and meaningful software engineering project.
 
-I would also like to express my gratitude to my internal mentor, Dr.\ Pratiksha Deshmukh, for her guidance and support during the internship, and to COEP Technological University for permitting me to undertake this internship as part of the curriculum and for providing the opportunity to gain practical experience in software development.
+I would also like to express my gratitude to my internal mentor, Dr.\ Pratiksha Deshmukh, for the guidance and support provided during the internship, and to COEP Technological University for permitting me to undertake this internship as part of the curriculum and for providing the opportunity to gain practical experience in software development.
 
 Lastly, I would like to thank my family for their constant support and encouragement during the course of this internship.
 

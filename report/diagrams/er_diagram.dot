@@ -1,27 +1,30 @@
-// Entity-relationship diagram of the persistence model.
-// Render: dot -Tpng er_diagram.dot -o ../images/er_diagram.png
+// Entity-relationship diagram (narrow 2-column layout, large fonts).
+// Render: dot -Tpng -Gdpi=300 er_diagram.dot -o ../images/er_diagram.png
 digraph er {
-  rankdir=LR;
+  rankdir=TB;
   bgcolor="white";
-  graph [fontname="Helvetica", fontsize=12, nodesep=0.4, ranksep=0.9];
-  node  [fontname="Helvetica", fontsize=10, shape=record, style="filled", fillcolor="white", color="black"];
-  edge  [fontname="Helvetica", fontsize=9, color="black", arrowhead=vee];
+  graph [fontname="Helvetica", fontsize=16, nodesep=0.45, ranksep=0.65];
+  node  [fontname="Helvetica", fontsize=15, shape=record, style="filled", fillcolor="white", color="black", margin="0.12,0.07"];
+  edge  [fontname="Helvetica", fontsize=14, color="black", arrowhead=vee];
 
-  User          [label="{User|id : Long\lemail : String (unique)\lusername : String\lpasswordHash : String\lrole : Role\lcreatedAt : Instant\l}"];
-  Problem       [label="{Problem|id : Long\ltitle : String\lslug : String (unique)\ldifficulty : Difficulty\lstatement : text\ltimeLimitMs : Integer\lmemoryLimitMb : Integer\l}"];
-  Tag           [label="{Tag|id : Long\lname : String (unique)\l}"];
+  User          [label="{User|id : Long\lemail : String\lusername : String\lpasswordHash : String\lrole : Role\l}"];
+  Problem       [label="{Problem|id : Long\ltitle : String\lslug : String\ldifficulty : Difficulty\lstatement : text\ltimeLimitMs : Integer\lmemoryLimitMb : Integer\l}"];
+  Tag           [label="{Tag|id : Long\lname : String\l}"];
   TestCase      [label="{TestCase|id : Long\linput : text\lexpectedOutput : text\lisPublic : boolean\lweight : Integer\l}"];
   Submission    [label="{Submission|id : Long\llanguage : Language\lsourceCode : text\lstatus : SubmissionStatus\lscore : Integer\lruntimeMs : Integer\lsubmittedAt : Instant\l}"];
   SubmissionResult [label="{SubmissionResult|id : Long\lverdict : SubmissionStatus\lruntimeMs : Integer\lmemoryKb : Integer\l}"];
   UserProgress  [label="{UserProgress|id : Long\lsolved : boolean\lbestSubmissionId : Long\lattempts : Integer\l}"];
 
-  // relationships (cardinality in labels)
-  User       -> Submission      [label="1..*  submits", dir=forward];
-  Problem    -> Submission      [label="1..*  for", dir=forward];
-  Problem    -> TestCase        [label="1..*  has", dir=forward];
-  Problem    -> Tag             [label="*..*  tagged", dir=both, arrowtail=vee];
-  Submission -> SubmissionResult[label="1..*  yields", dir=forward];
-  TestCase   -> SubmissionResult[label="1..*  judged by", dir=forward];
-  User       -> UserProgress    [label="1..*", dir=forward];
-  Problem    -> UserProgress    [label="1..*", dir=forward];
+  { rank=same; User; Problem; }
+  { rank=same; Tag; TestCase; }
+  { rank=same; Submission; UserProgress; }
+
+  User       -> Submission      [label="1..*  submits"];
+  Problem    -> Submission      [label="1..*  for"];
+  Problem    -> TestCase        [label="1..*  has"];
+  Problem    -> Tag             [label="*..*", dir=both, arrowtail=vee];
+  User       -> UserProgress    [label="1..*"];
+  Problem    -> UserProgress    [label="1..*", constraint=false];
+  Submission -> SubmissionResult[label="1..*  yields"];
+  TestCase   -> SubmissionResult[label="1..*", constraint=false];
 }
